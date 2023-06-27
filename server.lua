@@ -70,7 +70,7 @@ function server.main()
   local monitor = peripheral.find('monitor')
   server.initializeMonitor(monitor)
   while true do
-    itemsInfo = server.getItemStorage(bridge)
+    itemsInfo = server.getItemStorageInfo(bridge)
     energyInfo = server.getEnergyInfo(bridge)
     server.drawData(monitor, itemsInfo, energyInfo)
     os.sleep(1)
