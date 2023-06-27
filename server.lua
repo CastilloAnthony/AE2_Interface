@@ -9,7 +9,6 @@ function server.checkForBridge()
   for i in peripheral.getNames() do
     if i == 'meBridge_0' then
       return true
-    end
     elseif (i == 'bottom') or (i == 'top') or (i == 'left') or (i == 'right') or (i == 'front') or (i == 'back') then
       if peripheral.getType(i) == 'meBridge' then
         return true
@@ -23,7 +22,6 @@ function server.checkForMonitor()
   for i in peripheral.getNames() do
     if i == 'monitor' then
       return true
-    end
     elseif (i == 'bottom') or (i == 'top') or (i == 'left') or (i == 'right') or (i == 'front') or (i == 'back') then
       if peripheral.getType(i) == 'monitor' then
         return true
