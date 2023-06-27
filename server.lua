@@ -62,13 +62,12 @@ function server.getItemStorageInfo(bridge)
 end --end getItemStorageInfo
 
 function server.main()
-  if server.checkForBridge() and server.checkForMonitor() then
-    local bridge = peripheral.find('meBridge')
-    local monitor = peripheral.find('monitor')
-  else
+  if not server.checkForBridge() and not server.checkForMonitor() then
     term.write('Cannot find either the meBridge or the monitor.')
     return false
   end
+  local bridge = peripheral.find('meBridge')
+  local monitor = peripheral.find('monitor')
   server.initializeMonitor(monitor)
   while true do
     itemsInfo = server.getItemStorage(bridge)
