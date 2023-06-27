@@ -25,7 +25,7 @@ function server.checkForMonitor()
   return false
 end --end checkForMonitor
 
-function server.initializeMonitor()
+function server.initializeMonitor(monitor)
   monitor.clear()
   monitor.setCursorPos(0,0)
 end --end initializeMonitor
@@ -69,7 +69,7 @@ function server.main()
     term.write('Cannot find either the meBridge or the monitor.')
     return false
   end
-  server.initializeMonitor()
+  server.initializeMonitor(monitor)
   while true do
     itemsInfo = server.getItemStorage(bridge)
     energyInfo = server.getEnergyInfo(bridge)
