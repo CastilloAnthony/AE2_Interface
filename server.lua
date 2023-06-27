@@ -8,9 +8,11 @@ local server = {} -- Stores all of the functions for the server
 function server.checkForBridge()
   for _, i in pairs(peripheral.getNames()) do
     if i == 'meBridge_0' then
+      term.write('Bridge found!')
       return true
     elseif (i == 'bottom') or (i == 'top') or (i == 'left') or (i == 'right') or (i == 'front') or (i == 'back') then
       if peripheral.getType(i) == 'meBridge' then
+        term.write('Bridge found!')
         return true
       end
     end
@@ -21,9 +23,11 @@ end --end checkForBridge
 function server.checkForMonitor()
   for _, i in pairs(peripheral.getNames()) do
     if i == 'monitor' then
+      term.write('Monitor found!')
       return true
     elseif (i == 'bottom') or (i == 'top') or (i == 'left') or (i == 'right') or (i == 'front') or (i == 'back') then
       if peripheral.getType(i) == 'monitor' then
+        term.write('Monitor found!')
         return true
       end
     end
@@ -72,8 +76,10 @@ function server.main()
     local bridge = peripheral.find('meBridge')
     local monitor = peripheral.find('monitor')
   else
+    term.write('Cannot find either the meBridge or the monitor.')
     return false
   end
+  server.initializeMonitor()
   while true do
     itemsInfo = server.getItemStorage(bridge)
     energyInfo = server.getEnergyInfo(bridge)
