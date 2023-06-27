@@ -6,7 +6,7 @@
 local server = {} -- Stores all of the functions for the server
 
 function server.checkForBridge()
-  for i in peripheral.getNames() do
+  for _, i in pairs(peripheral.getNames()) do
     if i == 'meBridge_0' then
       return true
     elseif (i == 'bottom') or (i == 'top') or (i == 'left') or (i == 'right') or (i == 'front') or (i == 'back') then
@@ -19,7 +19,7 @@ function server.checkForBridge()
 end --end checkForBridge
     
 function server.checkForMonitor()
-  for i in peripheral.getNames() do
+  for _, i in pairs(peripheral.getNames()) do
     if i == 'monitor' then
       return true
     elseif (i == 'bottom') or (i == 'top') or (i == 'left') or (i == 'right') or (i == 'front') or (i == 'back') then
@@ -74,13 +74,12 @@ function server.main()
   else
     return false
   end
-
   while true do
     itemsInfo = server.getItemStorage(bridge)
     energyInfo = server.getEnergyInfo(bridge)
     server.drawData(monitor, itemsInfo, energyInfo)
     os.sleep(1)
-
+  end
 end --end main
 
 return server
