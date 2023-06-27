@@ -60,11 +60,11 @@ function server.drawData(monitor, items, energy)
 end --end drawData
 
 function server.getEnergyInfo(bridge)
-  return [bridge.getEnergyStorage(), bridge.getMaxEnergyStorage(), bridge.getEnergyUsage()]
+  return {bridge.getEnergyStorage(), bridge.getMaxEnergyStorage(), bridge.getEnergyUsage()}
 end --end getEnergyInfo
 
 function server.getItemStorageInfo(bridge)
-  return [bridge.getTotalItemStorage(), bridge.getUsedItemStorage(), bridge.getAvailableItemStorage()]
+  return {bridge.getTotalItemStorage(), bridge.getUsedItemStorage(), bridge.getAvailableItemStorage()}
 end --end getItemStorageInfo
 
 function server.main()
