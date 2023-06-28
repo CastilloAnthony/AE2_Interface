@@ -1,3 +1,3 @@
 local server = require('server')
 
-server.main()
+server.main() 
