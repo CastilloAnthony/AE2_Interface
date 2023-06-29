@@ -7,12 +7,20 @@ local gui = require('gui')
 
 local server = {} -- Stores all of the functions for the server
 
+function server.moveCursor()
+  term.scroll(1)
+  local _, y = term.getCursorPos()
+  term.setCursorPos(1, y)
+end --end moveCursor
+
 function server.checkForBridge()
   for _, i in pairs(peripheral.getNames()) do
     if peripheral.getType(i) == 'meBridge' then
-      term.write('Bridge found!')
-      server.moveCursor()
-      return true
+      if peripheral.call(i, 'isConnected') then
+        term.write('Bridge found!')
+        server.moveCursor()
+        return peripheral.wrap(i)
+      end
     end
   end
   return false
@@ -23,7 +31,7 @@ function server.checkForMonitor()
     if peripheral.getType(i) == 'monitor' then
       term.write('Monitor found!')
       server.moveCursor()
-      return true
+      return peripheral.wrap(i)
     end
   end
   return false
@@ -35,7 +43,7 @@ function server.checkForWirelessModem()
       if peripheral.call(i, 'isWireless') then
         term.write('Wireless Modem found!')
         server.moveCursor()
-        return true
+        return peripheral.wrap(i)
       end
     end
   end
@@ -43,10 +51,7 @@ function server.checkForWirelessModem()
 end --end checkForWirelessModem
 
 function server.initializeNetwork(modem)
-  --7 for broadcast
-  --14 for handshake
-  --21 for request
-  --28 for data
+  --['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}
   if not modem.isOpen(14) then
     modem.open(14)
   end
@@ -56,54 +61,65 @@ function server.initializeNetwork(modem)
 end --end initializeNetwork
 
 function server.broadcast(modem)
-  info = {['message'] = 'This is an automated broadcast sharing the ports and additional information for the AE Server.', ['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['data'] = 28}, ['additional'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}}
-  modem.transmit(7, 7, info)
+  local info = {['message'] = 'This is an automated broadcast sharing the ports and additional information for the AE Server.', ['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}, ['verify'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}}
+  modem.transmit(7, 0, info)
 end --end broadcast
 
-function server.handshake(modem)
-
-end --end handshake
-
-function server.request(modem)
-
-end --end request
-
-function server.sendData(modem, data)
-  modem.transmit(28, 28, data)
+function server.sendData(modem, data) -- Depreciated
+  modem.transmit(28, 0, data)
 end --end sendData
 
 function server.checkMessages(modem)
-  timerID = os.timer(0.5)
+  -- packet = {['message'] = 'This is a message', ['verify'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}} --A standard packet transmission
+  local timerID = os.startTimer(0.1)
   --local handshake = {['id'] = 0, ['label'] = 'Anthony\'s Pocket Computer'} -- Handshake format
-  local event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message', 'timer')
-  if event == 'timer' then
-    return false
+  local event, side, channel, replyChannel, message, distance
+  while true do
+    event, side, channel, replyChannel, message, distance = os.pullEvent()
+    if event == 'modem_message' then
+      break
+    elseif (event == 'timer') and (side == timerID) then
+      return false
+    end
   end
   if event == 'modem_message' then
-    if channel == 14 then
-      file = fs.open('clients', 'r')
-      local clients = textutils.unserialize(file.readAll())
-      file.close()
-      for i in clients do
-        if (message['handshake']['id'] == i['id']) and (message['handshake']['label'] == i['label']) then
-          modem.transmit(14,14,{['success'] = true, ['message'] = 'You are already a client.'})
-          return
-        end
-      end
-      table.insert(clients, message['handshake'])
-      file = fs.open('clients', 'w')
-      file.write(textutils.serialize(clients))
-      file.close()
-      return
-    elseif channel == 21 then
-      file = fs.open('clients', 'r')
-      local clients = textutils.unserialize(file.readAll())
-      file.close()
-      for i in clients do
-        if (message['id'] == i['id']) and (message['label'] == i['label']) then
-          if message['message'] == 'latestSnapshot' then
-            server.sendData(modem, server.loadLatestSnapshot())
+    if (channel == 14) then
+      if (message['handshake'] == true) then
+        local file = fs.open('clients', 'r')
+        local clients = textutils.unserialize(file.readAll())
+        file.close()
+        for _, i in pairs(clients) do
+          if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
+            modem.transmit(14,14,{['success'] = true, ['message'] = 'You are already a client.', ['verify'] = server.getComputerInfo()})
+            term.write('Successful handshake with '..message['verify']['id']..' '..message['verify']['label'])
+            server.moveCursor()
+            return true
           end
+        end
+        table.insert(clients, message['verify'])
+        local file = fs.open('clients', 'w')
+        file.write(textutils.serialize(clients))
+        file.close()
+        modem.transmit(14,14,{['success'] = true, ['message'] = 'You have been added to the list of clients.', ['verify'] = server.getComputerInfo()})
+        term.write('Successful handshake with '..message['verify']['id']..' '..message['verify']['label'])
+        server.moveCursor()
+        return true
+      end
+    elseif channel == 21 then
+      local file = fs.open('clients', 'r')
+      local clients = textutils.unserialize(file.readAll())
+      file.close()
+      for _, i in pairs(clients) do
+        if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
+          if message['message'] == 'latestSnapshot' then
+            modem.transmit(28, 0, {['message'] = 'Enjoy!',['verify'] = server.getComputerInfo(), ['data'] = server.loadLatestSnapshot()})
+            term.write('Sent data packet to '..message['verify']['id']..' '..message['verify']['label'])
+            server.moveCursor()
+          else
+           -- term.write('Unknown request.')
+          end
+        else
+          --term.write('Unauthorized client request.')
         end
       end
     end
@@ -145,11 +161,34 @@ function server.comparison(a, b)
   return a['amount'] > b['amount']
 end --end sort
 
+function server.checkIfInTable(element, table)
+  for i, j in pairs(table) do
+    if element == j then
+      return true
+    end
+  end
+  return false
+end --end
+
 function server.getItemStorageInfo(bridge)
   local items = bridge.listItems()
-  local topFive = {items[1], items[2], items[3], items[4], items[5]} --Knowledge 
+  local topFive = {items[1], items[2], items[3], items[4], items[5]} --Knowledge Essence, Chromatic Steel, Currency, tetc. (important items)
   table.sort(topFive, server.comparison)
-  for _, i in pairs(items) do
+  local count = 0
+  repeat
+    count = count + 1
+    for _, i in pairs(items) do
+      for index, j in pairs(topFive) do
+        if i['name'] ~= j['name'] and not server.checkIfInTable(i, topFive) then
+          if tonumber(i['amount']) > tonumber(j['amount']) then
+            topFive[index] = i
+            break
+          end
+        end
+      end
+    end
+  until count == 4
+  --[[
     if (i['name'] ~= topFive[5]['name']) and (i['amount'] > topFive[5]['amount']) then
       if (i['name'] ~= topFive[4]['name']) and (i['amount'] > topFive[4]['amount']) then
         if (i['name'] ~= topFive[3]['name']) and (i['amount'] > topFive[3]['amount']) then
@@ -170,33 +209,26 @@ function server.getItemStorageInfo(bridge)
       end
     end
   end
-  --[[
-    for index, j in pairs(topFive) do
-      if(i['name'] ~= j['name']) and (i['amount'] > j['amount']) then
-        topFive[index] = i
-        break
-      end
-    end
-  end
   ]]
   return {['maxStorage'] = bridge.getTotalItemStorage(), ['currentStorage'] = bridge.getUsedItemStorage(), ['availableStorage'] = bridge.getAvailableItemStorage(), ['topFive'] = topFive}
-end --end getItemStorageInfo
-
+end --end getItemStorage1
 function server.getTimeInfo()
   return {os.date()}
 end --end getTimeInfo
 
 function server.loadLatestSnapshot()
-  latest = nil
-  for i in fs.list('data') do
+  local latest = nil
+  for _, i in pairs(fs.list('data')) do
     if latest == nil then
-      latest = i
-    elseif i > latest then
-      latest = i
+      latest = tonumber(i)
+    elseif tonumber(i) > latest then
+      latest = tonumber(i)
     end
   end
-  file = fs.open('data/'..latest, 'r')
-  data = file.readAll()
+  --local list = fs.list('data')
+  --latest = list[1]
+  local file = fs.open('data/'..latest, 'r')
+  local data = file.readAll()
   file.close()
   return data
 end --end loadLAtestSnapshot
@@ -204,15 +236,22 @@ end --end loadLAtestSnapshot
 function server.saveSnapshot(time, items, energy, lastSnapshotTime)
   --term.write(lastSnapshotTime)
   while #fs.list('data') > 60 do
-    toDelete = fs.list('data')[#fs.list('data')]
-    term.write('Deleting: '..toDelete)
+    local oldest = nil
+    for _, i in pairs(fs.list('data')) do
+      if oldest == nil then
+        oldest = tonumber(i)
+      elseif tonumber(i) < oldest then
+        oldest = tonumber(i)
+      end
+    end
+    term.write('Deleting: '..oldest)
     server.moveCursor()
-    fs.delete('data/'..toDelete)
+    fs.delete('data/'..oldest)
   end
   if (os.clock() - lastSnapshotTime) >= 60 then
-    computer = {['id'] = os.computerID(), ['label'] = os.computerLabel()}
-    data = {['computer'] = computer, ['time'] = time, ['items'] = items, ['energy'] = energy}
-    filename = 'data/'..os.epoch()
+    local computer = server.getComputerInfo()
+    local data = {['computer'] = computer, ['time'] = time, ['items'] = items, ['energy'] = energy}
+    local filename = 'data/'..os.epoch()
     local file = fs.open(filename, 'w')
     file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
     file.close()
@@ -222,16 +261,17 @@ function server.saveSnapshot(time, items, energy, lastSnapshotTime)
   end
 end --end saveSnapshot
 
-function server.moveCursor()
-  term.scroll(1)
-  _, y = term.getCursorPos()
-  term.setCursorPos(1, y)
-end --end moveCursor
+function server.getComputerInfo()
+  return {['id'] = os.computerID(), ['label'] = os.computerLabel()}
+end --end getComputerInfo
 
 function server.main()
   term.write('Initializing...')
   server.moveCursor()
-  local initial = {server.checkForBridge(), server.checkForMonitor(), server.checkForWirelessModem()}
+  if os.getComputerLabel() == nil then
+    os.setComputerLabel('AE2_Server')
+  end
+  local initial = {['computerInfo'] = server.getComputerInfo() , ['bridge'] = server.checkForBridge(), ['monitor'] = server.checkForMonitor(), ['modem'] = server.checkForWirelessModem()}
   for _, i in pairs(initial) do
     if i == false then
       term.write('Cannot find either a meBridge, a monitor, or a wireless modem.')
@@ -239,17 +279,23 @@ function server.main()
       return false
     end
   end
-  if os.getComputerLabel() == nil then
-    os.setComputerLabel('AE2_Server')
-  end
   term.write('Computer ID: '..os.computerID())
   server.moveCursor()
   term.write('Computer Label: '..os.getComputerLabel())
   server.moveCursor()
   fs.makeDir('data')
-  local bridge = peripheral.find('meBridge')
-  local monitor = peripheral.find('monitor')
-  local modem = peripheral.find('modem')
+  term.write('Saving data to /data/')
+  server.moveCursor()
+  local file = fs.open('clients', 'w')
+  local temp = {server.getComputerInfo()}
+  file.write(textutils.serialize(temp))
+  file.close()
+  local file = fs.open('server.keys', 'w')
+  file.write(textutils.serialize(server.getComputerInfo()))
+  file.close()
+  local bridge = initial['bridge']
+  local monitor = initial['monitor']
+  local modem = initial['modem']
   local lastSnapshotTime = os.clock()
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
@@ -262,7 +308,10 @@ function server.main()
       lastSnapshotTime = temp
     end
     gui.main(monitor, timeInfo, itemsInfo, energyInfo)
-    server.broadcast(modem)
+    server.checkMessages(modem)
+    if (os.clock() - lastSnapshotTime) > 60 then
+      server.broadcast(modem)
+    end
     --server.drawData(monitor, timeInfo, itemsInfo, energyInfo)
     --os.sleep(0)
   end

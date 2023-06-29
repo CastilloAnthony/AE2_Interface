@@ -17,7 +17,7 @@ function gui.main(monitor, timeInfo, itemsInfo, energyInfo)
     local width, height = gui.initialize(monitor)
     local widthFactor = 7/10
     monitor.setBackgroundColor(colors.gray)
-    for i=1, height-1 do
+    for i=1, height do
         for j=1, width do
             monitor.setCursorPos(j,i)
             monitor.write(' ')
