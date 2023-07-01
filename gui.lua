@@ -1,7 +1,7 @@
 
 local gui = {}
 
-gui.totalPages = 4
+gui.totalPages = 9
 --gui.currentPage = 
 gui.settings = nil
 gui.width = nil
@@ -59,8 +59,12 @@ function gui.sortLogElements(a, b)
     return tonumber(a['order']) > tonumber(b['order'])
 end
 
-function gui.sortUserSearch(a, b)
+function gui.compareByAmount(a, b)
     return tonumber(a['amount']) > tonumber(b['amount'])
+end
+
+function gui.compareByBytes(a, b)
+    return tonumber(a['totalBytes']) > tonumber(b['totalBytes'])
 end
 
 function gui.populateTable(allData)
@@ -84,7 +88,7 @@ function gui.populateTable(allData)
                     end
                 end
             end
-            table.sort(gui.userSearchTable, gui.sortUserSearch)
+            table.sort(gui.userSearchTable, gui.compareByAmount)
         end
     end
 end
@@ -98,17 +102,28 @@ function gui.checkIfInTable(table, element)
     return false
 end --end checkIfInTable
 
-function gui.main(timeInfo, itemsInfo, energyInfo, allData)
+function gui.main(data, allData)
+    --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo
     gui.readSettings()
     --gui.initialize(gui.monitor)
     if gui.settings['currentPage'] == 1 then
-        gui.page1(timeInfo, itemsInfo, energyInfo)
+        gui.page1(data['computer'], data['time'], data['items'], data['energy'], data['fluids'])
     elseif gui.settings['currentPage'] == 2 then
-        gui.page2(timeInfo, itemsInfo, allData)
+        gui.page2(data['energy'])
     elseif gui.settings['currentPage'] == 3 then
-        gui.page3(timeInfo, itemsInfo, allData)
+        gui.page3(data['items'], allData)
     elseif gui.settings['currentPage'] == 4 then
-        gui.page4(timeInfo)
+        gui.page4(data['fluids'])
+    elseif gui.settings['currentPage'] == 5 then
+        gui.page5(allData)
+    elseif gui.settings['currentPage'] == 6 then
+        gui.page6(allData)
+    elseif gui.settings['currentPage'] == 7 then
+        gui.page7(data['cells'])
+    elseif gui.settings['currentPage'] == 8 then
+        gui.page8(data['cpus'])
+    elseif gui.settings['currentPage'] == 9 then
+        gui.page9()
     end
 end --end main()
 
@@ -161,7 +176,7 @@ function gui.clickedButton(button, x, y)
                 return true
             end
         elseif y == 3 then
-            if gui.settings['currentPage'] == 2 then
+            if gui.settings['currentPage'] == 5 then
                 if x>=2 and x<=gui.width-1 then
                     gui.monitor.setBackgroundColor(colors.lightGray)
                     gui.monitor.setCursorPos(2,3)
@@ -198,11 +213,14 @@ function gui.changeSettings(currentPage, preferredItems) --Not used
     gui.writeSettings(settings)
 end
 
-function gui.resizeString(string)
-    return string.sub(string, 1, gui.width*gui.widthFactor-3)
+function gui.resizeString(string, smaller)
+    if smaller == nil then
+        smaller = 0
+    end
+    return string.sub(string, 1, gui.width*gui.widthFactor-3-smaller)
 end
 
-function gui.drawHeader(timeInfo)
+function gui.drawHeader()
     gui.monitor.setBackgroundColor(colors.gray)
     gui.monitor.setTextColor(colors.white)
     for i=1, gui.height do
@@ -212,7 +230,7 @@ function gui.drawHeader(timeInfo)
         end
     end
     gui.monitor.setCursorPos(1,1)
-    gui.monitor.write(timeInfo[1])
+    gui.monitor.write(os.date())
     gui.monitor.setCursorPos(2,2)
 end
 
@@ -230,89 +248,243 @@ function gui.drawButtons()
     gui.monitor.setCursorPos(1, gui.height)
 end
 
-function gui.page1(timeInfo, itemsInfo, energyInfo)
-    gui.drawHeader(timeInfo)
+function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
+    gui.drawHeader()
 
-    gui.monitor.setTextColor(colors.orange)
+    gui.monitor.setCursorPos(2, 3)
+    gui.monitor.setTextColor(colors.yellow)
+    gui.monitor.write('Snapshot Report: ')
+    gui.monitor.setCursorPos(2,4)
+    gui.monitor.setTextColor(colors.white)
+    gui.monitor.write(timeInfo)
+    gui.monitor.setCursorPos(2,6)
+    gui.monitor.setTextColor(colors.yellow)
+    gui.monitor.write('Server Info:')
+    gui.monitor.setTextColor(colors.white)
+    gui.monitor.setCursorPos(2,7)
+    gui.monitor.write('Name: '..serverInfo['label'])
+    gui.monitor.setCursorPos(2,8)
+    gui.monitor.write('ID: '..serverInfo['id'])
+    
+    gui.monitor.setCursorPos(2,10)
+    gui.monitor.setTextColor(colors.purple)
     gui.monitor.write('Power: ')
-    gui.monitor.setTextColor(colors.pink)
-    gui.monitor.setCursorPos(gui.width*gui.widthFactor,2)
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
     gui.monitor.write((math.floor((energyInfo['currentStorage']/energyInfo['maxStorage'])*1000)/10)..'%')
-    gui.monitor.setCursorPos(2,3)
+    gui.monitor.setCursorPos(2,11)
     gui.monitor.setBackgroundColor(colors.red)
     for i=1, (energyInfo['currentStorage']/energyInfo['maxStorage'])*gui.width-1 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
-    gui.monitor.setTextColor(colors.orange)
-    gui.monitor.setCursorPos(2,4)
-    gui.monitor.write('Power Usage: ')
-    gui.monitor.setTextColor(colors.pink)
-    gui.monitor.setCursorPos(gui.width*gui.widthFactor,4)
-    gui.monitor.write((math.floor(energyInfo['usage']*2.5*10)/10)..'RF/t')
-    gui.monitor.setCursorPos(2,6)
-    gui.monitor.setTextColor(colors.lightBlue)
+
+    gui.monitor.setCursorPos(2,13)
+    gui.monitor.setTextColor(colors.lime)
     gui.monitor.write('Items: ')--..(math.floor((itemsInfo['currentStorage']/itemsInfo['maxStorage'])*1000)/10)..'%')
-    gui.monitor.setTextColor(colors.cyan)
-    gui.monitor.setCursorPos(gui.width*gui.widthFactor,6)
+    gui.monitor.setTextColor(colors.brown)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,13)
     gui.monitor.write((math.floor(itemsInfo['currentStorage']/itemsInfo['maxStorage']*1000)/10)..'%')
-    gui.monitor.setCursorPos(2,7)
-    gui.monitor.setBackgroundColor(colors.blue)
+    gui.monitor.setCursorPos(2,14)
+    gui.monitor.setBackgroundColor(colors.green)
     for i=1, (itemsInfo['currentStorage']/itemsInfo['maxStorage'])*gui.width-1 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
+
+    gui.monitor.setCursorPos(2,16)
     gui.monitor.setTextColor(colors.lightBlue)
-    gui.monitor.setCursorPos(2,8)
-    gui.monitor.write('Max Storage: ')
+    gui.monitor.write('Fluids:')
     gui.monitor.setTextColor(colors.cyan)
-    gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
-    gui.monitor.write(''..itemsInfo['maxStorage'])
-    gui.monitor.setTextColor(colors.lightBlue)
-    gui.monitor.setCursorPos(2,9)
-    gui.monitor.write('Stored Items: ')
-    gui.monitor.setTextColor(colors.cyan)
-    gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
-    gui.monitor.write(''..itemsInfo['currentStorage'])
-    gui.monitor.setTextColor(colors.lightBlue)
-    gui.monitor.setCursorPos(2,10)
-    gui.monitor.write('Free Storage: ')
-    gui.monitor.setTextColor(colors.cyan)
-    gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
-    gui.monitor.write(''..itemsInfo['availableStorage'])
-    gui.monitor.setCursorPos(2,12)
-    gui.monitor.setTextColor(colors.yellow)
-    gui.monitor.write('Top Five Stored: ')
-    for i, j in pairs(itemsInfo['topFive']) do
-        gui.monitor.setTextColor(colors.green)
-        gui.monitor.setCursorPos(2, 12+i)
-        gui.monitor.write(gui.resizeString(j['displayName']))
-        gui.monitor.setTextColor(colors.brown)
-        gui.monitor.setCursorPos(gui.width*gui.widthFactor, 12+i)
-        gui.monitor.write(''..j['amount'])
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,16)
+    gui.monitor.write((math.floor(fluidInfo['currentStorage']/fluidInfo['maxStorage']*1000)/10)..'%')
+    gui.monitor.setCursorPos(2,17)
+    gui.monitor.setBackgroundColor(colors.blue)
+    for i=1, (fluidInfo['currentStorage']/fluidInfo['maxStorage'])*gui.width-1 do
+        gui.monitor.write(' ')
     end
+    gui.monitor.setBackgroundColor(colors.gray)
 
     gui.drawButtons()
 end --end main
 
-function gui.page2(timeInfo, itemsInfo, allData)
-    gui.drawHeader(timeInfo)
+function gui.page2(energyInfo) -- Energy
+    gui.drawHeader()
+
+    gui.monitor.setCursorPos(2, 3)
+    gui.monitor.setTextColor(colors.purple)
+    gui.monitor.write('Power: ')
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,3)
+    gui.monitor.write((math.floor((energyInfo['currentStorage']/energyInfo['maxStorage'])*1000)/10)..'%')
+    gui.monitor.setCursorPos(2,4)
+    gui.monitor.setBackgroundColor(colors.red)
+    for i=1, (energyInfo['currentStorage']/energyInfo['maxStorage'])*gui.width-1 do
+        gui.monitor.write(' ')
+    end
+    gui.monitor.setBackgroundColor(colors.gray)
+    gui.monitor.setTextColor(colors.purple)
+    gui.monitor.setCursorPos(2,6)
+    gui.monitor.write('Max Power: ')
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,6)
+    gui.monitor.write(''..math.floor(energyInfo['maxStorage']))
+    gui.monitor.setTextColor(colors.purple)
+    gui.monitor.setCursorPos(2,7)
+    gui.monitor.write('Stored Power: ')
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,7)
+    gui.monitor.write(''..math.floor(energyInfo['currentStorage']))
+    gui.monitor.setTextColor(colors.purple)
+    gui.monitor.setCursorPos(2,8)
+    gui.monitor.write('Power Usage: ')
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
+    gui.monitor.write(math.floor(energyInfo['usage']*2.5)..' '..'RF/t')
+    --gui.monitor.setTextColor(colors.purple)
+    gui.monitor.setCursorPos(2,9)
+
+    gui.drawButtons()
+end
+
+function gui.page3(itemsInfo, allData) -- Items
+    gui.drawHeader()
+
+    gui.monitor.setCursorPos(2,3)
+    gui.monitor.setTextColor(colors.lime)
+    gui.monitor.write('Items: ')--..(math.floor((itemsInfo['currentStorage']/itemsInfo['maxStorage'])*1000)/10)..'%')
+    gui.monitor.setTextColor(colors.brown)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,3)
+    gui.monitor.write((math.floor(itemsInfo['currentStorage']/itemsInfo['maxStorage']*1000)/10)..'%')
+    gui.monitor.setCursorPos(2,4)
+    gui.monitor.setBackgroundColor(colors.green)
+    for i=1, (itemsInfo['currentStorage']/itemsInfo['maxStorage'])*gui.width-1 do
+        gui.monitor.write(' ')
+    end
+    gui.monitor.setBackgroundColor(colors.gray)
+    gui.monitor.setTextColor(colors.lime)
+    gui.monitor.setCursorPos(2,6)
+    gui.monitor.write('Max Storage: ')
+    gui.monitor.setTextColor(colors.brown)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,6)
+    gui.monitor.write(''..itemsInfo['maxStorage'])
+    gui.monitor.setTextColor(colors.lime)
+    gui.monitor.setCursorPos(2,7)
+    gui.monitor.write('Stored Items: ')
+    gui.monitor.setTextColor(colors.brown)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,7)
+    gui.monitor.write(''..itemsInfo['currentStorage'])
+    gui.monitor.setTextColor(colors.lime)
+    gui.monitor.setCursorPos(2,8)
+    gui.monitor.write('Free Storage: ')
+    gui.monitor.setTextColor(colors.brown)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
+    gui.monitor.write(''..itemsInfo['availableStorage'])
+
+    gui.monitor.setCursorPos(2,10)
+    gui.monitor.setTextColor(colors.yellow)
+    gui.monitor.write('Item')
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
+    gui.monitor.write('Quantity')
+    table.sort(allData, gui.compareByAmount)
+    for i=1, gui.height-13 do
+        if i > #allData then
+            break
+        end
+        gui.monitor.setTextColor(colors.lime)
+        gui.monitor.setCursorPos(2,i+10)
+        
+        --gui.monitor.write(gui.resizeString(allData[i-3]['displayName']))
+        gui.monitor.write(gui.resizeString(allData[i]['displayName']))
+        gui.monitor.setTextColor(colors.brown)
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
+        gui.monitor.write(''..allData[i]['amount'])
+    end
+
+    gui.drawButtons()
+end
+
+function gui.page4(fluidInfo) -- Fluids
+    gui.drawHeader()
+    if fluidInfo == nil then
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('No fluid information found.')
+    elseif #fluidInfo['listFluid'] >= 1 then
+        --textutils.slowWrite(fluidInfo['listFluid'][1]['amount']..' '..fluidInfo['listFluid'][2]['amount']..' '..fluidInfo['listFluid'][3]['amount'])
+        table.sort(fluidInfo['listFluid'], gui.compareByAmount)
+        gui.monitor.setCursorPos(2,3)
+        gui.monitor.setTextColor(colors.lightBlue)
+        gui.monitor.write('Fluids:')
+        gui.monitor.setTextColor(colors.cyan)
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor,3)
+        gui.monitor.write((math.floor(fluidInfo['currentStorage']/fluidInfo['maxStorage']*1000)/10)..'%')
+        gui.monitor.setCursorPos(2,4)
+        gui.monitor.setBackgroundColor(colors.blue)
+        for i=1, (fluidInfo['currentStorage']/fluidInfo['maxStorage'])*gui.width-1 do
+            gui.monitor.write(' ')
+        end
+        gui.monitor.setBackgroundColor(colors.gray)
+        gui.monitor.setTextColor(colors.lightBlue)
+        gui.monitor.setCursorPos(2,6)
+        gui.monitor.write('Max Storage: ')
+        gui.monitor.setTextColor(colors.cyan)
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor,6)
+        gui.monitor.write(''..fluidInfo['maxStorage'])
+        gui.monitor.setTextColor(colors.lightBlue)
+        gui.monitor.setCursorPos(2,7)
+        gui.monitor.write('Stored Fluid: ')
+        gui.monitor.setTextColor(colors.cyan)
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor,7)
+        gui.monitor.write(''..fluidInfo['currentStorage'])
+        gui.monitor.setTextColor(colors.lightBlue)
+        gui.monitor.setCursorPos(2,8)
+        gui.monitor.write('Free Storage: ')
+        gui.monitor.setTextColor(colors.cyan)
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
+        gui.monitor.write(''..fluidInfo['availableStorage'])
+        --fluidInfo['listFluid'][i] = ['name'], ['amount'], ['tags'], ['isCraftable']
+        gui.monitor.setTextColor(colors.yellow)
+
+        gui.monitor.setCursorPos(2,10)
+        gui.monitor.write('Fluid')
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
+        gui.monitor.write('mBuckets')
+        for i, j in pairs(fluidInfo['listFluid']) do
+            if i > gui.height-14 then
+                break
+            end
+            gui.monitor.setTextColor(colors.lightBlue)
+            gui.monitor.setCursorPos(2, i+10)
+            gui.monitor.write(string.upper(string.sub(j['name'], string.find(j['name'], ':')+1,string.find(j['name'], ':')+1))..string.sub(j['name'], string.find(j['name'], ':')+2, string.len(j['name'])))
+            gui.monitor.setCursorPos(gui.width*gui.widthFactor, i+10)
+            gui.monitor.setTextColor(colors.cyan)
+            gui.monitor.write(''..j['amount']..'mB')
+        end
+    else
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('No fluid information found.')
+    end
+    gui.drawButtons()
+end
+
+function gui.page5(allData)
+    gui.drawHeader()
     gui.monitor.setBackgroundColor(colors.lightGray)
     gui.monitor.setCursorPos(2, 3)
     for i=2, gui.width-1 do
         gui.monitor.write(' ')
     end
     gui.monitor.setCursorPos(2, 3)
-    gui.monitor.write('Search...')
+    gui.monitor.write('Search Items...')
     gui.monitor.setBackgroundColor(colors.gray)
     gui.monitor.setCursorPos(2, 5)
     gui.populateTable(allData)
     if gui.userSearchTable ~= {} then
-        for i = 1, gui.height-8 do
+        for i = 1, gui.height-7 do
             if i > #gui.userSearchTable then
                 break
             end
-            gui.monitor.setTextColor(colors.green)
+            gui.monitor.setTextColor(colors.lime)
             gui.monitor.setCursorPos(2, i+4)
             gui.monitor.write(gui.resizeString(gui.userSearchTable[i]['displayName']))
             gui.monitor.setTextColor(colors.brown)
@@ -323,8 +495,8 @@ function gui.page2(timeInfo, itemsInfo, allData)
     gui.drawButtons()
 end
 
-function gui.page3(timeInfo, itemsInfo, allData)
-    gui.drawHeader(timeInfo)
+function gui.page6(allData)
+    gui.drawHeader()
 
     --gui.monitor.setBackgroundColor(colors.gray)
     gui.monitor.setTextColor(colors.yellow)
@@ -332,7 +504,7 @@ function gui.page3(timeInfo, itemsInfo, allData)
     gui.monitor.write('At a Glance:') --Watch List
     for i=4, gui.height-3 do
         local selection = math.random(1,#allData)
-        gui.monitor.setTextColor(colors.green)
+        gui.monitor.setTextColor(colors.lime)
         gui.monitor.setCursorPos(2,i)
         if #allData == 0 then
             gui.log('Error in large packet, size is 0.')
@@ -351,8 +523,101 @@ function gui.page3(timeInfo, itemsInfo, allData)
     gui.drawButtons()
 end
 
-function gui.page4(timeInfo, itemsInfo)
-    gui.drawHeader(timeInfo)
+function gui.page7(cellsInfo)
+    gui.drawHeader()
+    gui.monitor.setTextColor(colors.yellow)
+    if cellsInfo == nil then
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('No cells information found.')
+    elseif #cellsInfo >= 1 then
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('Type'..'  '..'Name')
+        gui.monitor.setCursorPos(gui.width*gui.widthFactor, 3)
+        gui.monitor.write('MaxBytes')
+        table.sort(cellsInfo, gui.compareByBytes)
+        for i, j in pairs(cellsInfo) do
+            local space = '  '
+            if i > gui.height-6 then
+                break
+            end
+            local adjustment = 0
+            if j['cellType'] == 'item' then
+                gui.monitor.setTextColor(colors.green)
+                adjustment = 4
+            elseif j['cellType'] == 'fluid' then
+                gui.monitor.setTextColor(colors.blue)
+                adjustment = 5
+                space = ' '
+            else
+                gui.monitor.setTextColor(colors.red)
+            end
+            gui.monitor.setCursorPos(2, i+3)
+            gui.monitor.write(string.upper(j['cellType']))
+            gui.monitor.setTextColor(colors.lightBlue)
+            if j['bytesPerType'] ~= nil then
+                gui.monitor.write(gui.resizeString(space..(j['bytesPerType']/8)..'k'..' Storage Cell', adjustment))
+            else
+                gui.monitor.write(gui.resizeString(space..(j['totalBytes']/1000)..'k'..' Deep Storage Cell', adjustment))
+            end
+            gui.monitor.setCursorPos(gui.width*gui.widthFactor, i+3)
+            gui.monitor.setTextColor(colors.cyan)
+            gui.monitor.write(''..j['totalBytes'])
+        end
+    else
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('No cells information found.')
+    end
+    gui.drawButtons()
+end
+
+function gui.page8(cpuInfo)
+    gui.drawHeader()
+    if cpuInfo == nil then
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('No crafting CPUs found.')
+    elseif #cpuInfo >= 1 then
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('Number of crafting CPUs: '..#cpuInfo)
+        gui.monitor.setCursorPos(2,5)
+        gui.monitor.setTextColor(colors.yellow)
+        gui.monitor.write('CPU')
+        gui.monitor.setCursorPos(gui.width/4, 5)
+        gui.monitor.write('Busy')
+        gui.monitor.setCursorPos(gui.width/4*2, 5)
+        gui.monitor.write('COs')
+        gui.monitor.setCursorPos(gui.width/4*3, 5)
+        gui.monitor.write('Storage')
+        for i, j in pairs(cpuInfo) do
+            if i>gui.height-8 then
+                break
+            end
+            gui.monitor.setTextColor(colors.green)
+            gui.monitor.setCursorPos(2,i+5)
+            gui.monitor.write(''..i)
+            gui.monitor.setCursorPos(gui.width/4, i+5)
+            if j['isBusy'] then
+                gui.monitor.setTextColor(colors.red)
+                gui.monitor.write(j['isBusy'])
+            else
+                gui.monitor.setTextColor(colors.blue)
+                gui.monitor.write(j['isBusy'])
+            end
+            gui.monitor.setTextColor(colors.lightBlue)
+            gui.monitor.setCursorPos(gui.width/4*2, i+5)
+            gui.monitor.write(''..j['coProcessors'])
+            gui.monitor.setTextColor(colors.cyan)
+            gui.monitor.setCursorPos(gui.width/4*3, i+5)
+            gui.monitor.write(''..j['storage'])
+        end
+    else
+        gui.monitor.setCursorPos(2, 3)
+        gui.monitor.write('No crafting CPUs found.')
+    end
+    gui.drawButtons()
+end
+
+function gui.page9(itemsInfo)
+    gui.drawHeader()
     table.sort(gui.logList , gui.sortLogElements)
     gui.monitor.setBackgroundColor(colors.black)
     for i=3, gui.height-3 do
@@ -372,8 +637,8 @@ function gui.page4(timeInfo, itemsInfo)
     gui.drawButtons()
 end
 
-function gui.pageN_format(timeInfo, itemsInfo, energyInfo)
-    gui.drawHeader(timeInfo)
+function gui.pageN_format(itemsInfo, energyInfo)
+    gui.drawHeader()
 
     gui.drawButtons()
 end
