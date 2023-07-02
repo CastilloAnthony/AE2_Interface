@@ -71,10 +71,15 @@ function server.initializeNetwork()
 end --end initializeNetwork
 
 function server.broadcast()
-  local info = {['message'] = 'This is an automated broadcast sharing the ports and additional information for the AE Server.', ['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}, ['verify'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}}
+  local info = {['message'] = 'This is an automated broadcast sharing the ports and additional information for the AE Server.', ['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}, ['verify'] = server.getComputerInfo()}
   --server.write('Broadcasted')
   server.modem.transmit(7, 0, info)
 end --end broadcast
+
+function server.broadcastDataAvailable()
+  local info = {['message'] = 'There is a new snapshot available.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'newDataAvailable'}}
+  server.modem.transmit(7, 0, info)
+end
 
 function server.checkMessages(event, side, channel, replyChannel, message, distance)
   if event == 'modem_message' then
@@ -175,8 +180,20 @@ function server.getAllItemsInfo()
   return server.bridge.listItems()
 end --end getAllItemsInfo
 
+function server.getCPUInfo()
+  return server.bridge.getCraftingCPUs()
+end
+
+function server.getCellsInfo()
+  return server.bridge.listCells()
+end
+
+function server.getFluidsInfo()
+  return {['maxStorage'] = server.bridge.getTotalFluidStorage(), ['currentStorage'] = server.bridge.getUsedFluidStorage(), ['availableStorage'] = server.bridge.getAvailableFluidStorage(), ['listFluid'] = server.bridge.listFluid()}
+end
+
 function server.getTimeInfo()
-  return {os.date()}
+  return os.date()
 end --end getTimeInfo
 
 function server.loadLatestSnapshot()
@@ -194,19 +211,18 @@ function server.loadLatestSnapshot()
   return data
 end --end loadLAtestSnapshot
 
-function server.saveSnapshot(time, items, energy, lastSnapshotTime)
+function server.saveSnapshot(data, lastSnapshotTime)
   if (os.clock() - lastSnapshotTime) >= 15 then
-    local computer = server.getComputerInfo()
-    local data = {['computer'] = computer, ['time'] = time, ['items'] = items, ['energy'] = energy}
     local filename = 'data/'..os.epoch()
     local file = fs.open(filename, 'w')
     file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
     file.close()
     server.write('Saved snapshot to: '..filename)
-    server.broadcast()
+    --server.broadcast()
+    server.broadcastDataAvailable()
     return os.clock()
   end
-  while #fs.list('data') > 60 do
+  while #fs.list('data') > 40 do
     local oldest = nil
     for _, i in pairs(fs.list('data')) do
       if oldest == nil then
@@ -231,7 +247,6 @@ function server.eventHandler()
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
     elseif event == 'mouse_up' or event == 'monitor_touch' then
       gui.clickedButton(arg1, arg2, arg3)
-      --ui.main(timeInfo, itemsInfo, energyInfo, server.getAllItemsInfo())
     end
   end
 end --end eventHandler
@@ -239,20 +254,22 @@ end --end eventHandler
 function server.main()
   local lastSnapshotTime = os.clock()
   while true do
-    local timeInfo = server.getTimeInfo()
-    local itemsInfo = server.getItemStorageInfo(bridge)
-    local energyInfo = server.getEnergyInfo(bridge)
-    local temp = server.saveSnapshot(timeInfo, itemsInfo, energyInfo, lastSnapshotTime)
+    local data = {['computer'] = server.getComputerInfo(), ['time'] = server.getTimeInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+    local temp = server.saveSnapshot(data, lastSnapshotTime)
     if temp ~= nil then
       lastSnapshotTime = temp
     end
-    gui.main(timeInfo, itemsInfo, energyInfo, server.getAllItemsInfo())
-    --if (os.clock() - lastSnapshotTime) > 15 then
-      --server.broadcast()
-    --end
+    gui.main(data, server.getAllItemsInfo())
     os.sleep(0)
   end
 end --end main
+
+function server.guiTime()
+  while true do
+    gui.updateTime()
+    os.sleep(0.5)
+  end
+end
 
 function server.initialize()
   local _, y = term.getSize()
@@ -299,7 +316,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.main, server.eventHandler)
+  parallel.waitForAny(server.guiTime, server.main, server.eventHandler)
 end --end initialize
 
 return server

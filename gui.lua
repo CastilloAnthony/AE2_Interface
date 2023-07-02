@@ -1,8 +1,7 @@
-
+local completion = require('cc.completion')
 local gui = {}
 
 gui.totalPages = 9
---gui.currentPage = 
 gui.settings = nil
 gui.width = nil
 gui.height = 100
@@ -12,6 +11,8 @@ gui.logList = {}
 gui.logCount = 0
 gui.userSearch = ''
 gui.userSearchTable = {}
+gui.searching = false
+gui.possible = {}
 
 function gui.initialize(monitor)
     gui.monitor = monitor
@@ -53,19 +54,19 @@ function gui.log(string)
         server.write('Deleting log: logs/'..fs.list('logs')[1])
         fs.delete('logs/'..fs.list('logs')[1])
     end
-end
+end --end log
 
 function gui.sortLogElements(a, b)
     return tonumber(a['order']) > tonumber(b['order'])
-end
+end --end sorLogElements
 
 function gui.compareByAmount(a, b)
     return tonumber(a['amount']) > tonumber(b['amount'])
-end
+end --end compareByAmount
 
 function gui.compareByBytes(a, b)
     return tonumber(a['totalBytes']) > tonumber(b['totalBytes'])
-end
+end --end compareByBytes
 
 function gui.populateTable(allData)
     if gui.userSearch ~= gui.settings['userSearch'] then
@@ -83,15 +84,17 @@ function gui.populateTable(allData)
         if gui.userSearch ~= nil then
             for _, i in pairs(allData) do
                 if string.find(string.lower(i['displayName']), gui.userSearch) ~= nil then
-                    if not gui.checkIfInTable(gui.userSearchTable, i) then
-                        table.insert(gui.userSearchTable, i)
+                    if string.find(string.lower(i['displayName']), gui.userSearch) == 1 then
+                        if not gui.checkIfInTable(gui.userSearchTable, i) then
+                            table.insert(gui.userSearchTable, i)
+                        end
                     end
                 end
             end
             table.sort(gui.userSearchTable, gui.compareByAmount)
         end
     end
-end
+end --end populateTable
 
 function gui.checkIfInTable(table, element)
     for _, i in pairs(table) do
@@ -103,6 +106,10 @@ function gui.checkIfInTable(table, element)
 end --end checkIfInTable
 
 function gui.main(data, allData)
+    if data == nil or allData == nil then
+        gui.log('No data was given.')
+        return
+    end
     --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo
     gui.readSettings()
     --gui.initialize(gui.monitor)
@@ -138,12 +145,12 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['preferredItems'] = {}}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
     file.close()   
-end
+end --end writeSettings
 
 function gui.nextPage(forward) -- true/false forwards/backwards
     gui.readSettings()
@@ -163,7 +170,29 @@ function gui.nextPage(forward) -- true/false forwards/backwards
         end
     end
     gui.writeSettings()
-end
+end --end nextPage
+
+function gui.populatePossibleAnswers(allData)
+    if #gui.possible > 1 then
+        repeat 
+            table.remove(gui.possible, #gui.possible)
+        until not (#gui.possible > 1)
+    end
+    for i, j in pairs(allData) do
+        table.insert(gui.possible, string.lower(j['displayName']))
+    end
+end --end populatePossibleAnswers
+
+function gui.changeColor() -- Not Used
+    while gui.searching do
+        gui.monitor.setBackgroundColor(colors.lightGray)
+    end
+end --end changeColor
+
+function gui.searchPartialComplete(text)
+    gui.monitor.setBackgroundColor(colors.lightGray)
+    return completion.choice(string.lower(text), gui.possible)
+end --end searchPartialComplete
 
 function gui.clickedButton(button, x, y)
     if button == 1 or peripheral.isPresent(tostring(button)) then
@@ -178,13 +207,18 @@ function gui.clickedButton(button, x, y)
         elseif y == 3 then
             if gui.settings['currentPage'] == 5 then
                 if x>=2 and x<=gui.width-1 then
+                    gui.searching = true
                     gui.monitor.setBackgroundColor(colors.lightGray)
                     gui.monitor.setCursorPos(2,3)
                     for i=2, gui.width-1 do
                         gui.monitor.write(' ')
                     end
                     gui.monitor.setCursorPos(2,3)
-                    gui.userSearch = string.lower(read())
+                    
+                    --gui.monitor.setBackgroundColor(colors.lightGray)
+                    local userInput = read(nil, gui.settings['searchHistory'], gui.searchPartialComplete)
+                    gui.userSearch = string.lower(userInput)
+                    gui.searching = false
                     gui.log('Usr Inpt: '..gui.userSearch)
                     --gui.userSearchTable = {}
                 end
@@ -192,7 +226,7 @@ function gui.clickedButton(button, x, y)
         end
     end
     return false
-end
+end --end clickedButton
 
 function gui.changeSettings(currentPage, preferredItems) --Not used
     if currentPage == nil and preferredItems == nil then
@@ -211,13 +245,30 @@ function gui.changeSettings(currentPage, preferredItems) --Not used
         settings['preferredItems'] = preferredItems
     end
     gui.writeSettings(settings)
-end
+end --end changeSettings
 
 function gui.resizeString(string, smaller)
     if smaller == nil then
         smaller = 0
     end
     return string.sub(string, 1, gui.width*gui.widthFactor-3-smaller)
+end --end resizeString
+
+function gui.updateTime()
+    local tempText = gui.monitor.getTextColor()
+    local tempBack = gui.monitor.getBackgroundColor()
+    local x, y = gui.monitor.getCursorPos()
+    gui.monitor.setTextColor(colors.white)
+    gui.monitor.setBackgroundColor(colors.gray)
+    for i=1, gui.width do
+        gui.monitor.setCursorPos(i,1)
+        gui.monitor.write(' ')
+    end
+    gui.monitor.setCursorPos(1,1)
+    gui.monitor.write(os.date())
+    gui.monitor.setCursorPos(x, y)
+    gui.monitor.setTextColor(tempText)
+    gui.monitor.setBackgroundColor(tempBack)
 end
 
 function gui.drawHeader()
@@ -225,12 +276,26 @@ function gui.drawHeader()
     gui.monitor.setTextColor(colors.white)
     for i=1, gui.height do
         for j=1, gui.width do
+            if i == 3 and gui.searching == true then
+                break
+            end
             gui.monitor.setCursorPos(j,i)
             gui.monitor.write(' ')
         end
     end
     gui.monitor.setCursorPos(1,1)
     gui.monitor.write(os.date())
+    gui.monitor.setCursorPos(2,2)
+end --end drawHeader
+
+function gui.clearScreen()
+    gui.monitor.setBackgroundColor(colors.gray)
+    for i=2, gui.height do
+        for j=1, gui.width do
+            gui.monitor.setCursorPos(j,i)
+            gui.monitor.write(' ')
+        end
+    end
     gui.monitor.setCursorPos(2,2)
 end
 
@@ -246,10 +311,10 @@ function gui.drawButtons()
     gui.monitor.setCursorPos(gui.width/2-2, gui.height)
     gui.monitor.write('Page '..gui.settings['currentPage'])
     gui.monitor.setCursorPos(1, gui.height)
-end
+end --end drawButtons
 
 function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
-    gui.drawHeader()
+    gui.clearScreen()
 
     gui.monitor.setCursorPos(2, 3)
     gui.monitor.setTextColor(colors.yellow)
@@ -306,10 +371,10 @@ function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
     gui.monitor.setBackgroundColor(colors.gray)
 
     gui.drawButtons()
-end --end main
+end --end page1
 
 function gui.page2(energyInfo) -- Energy
-    gui.drawHeader()
+    gui.clearScreen()
 
     gui.monitor.setCursorPos(2, 3)
     gui.monitor.setTextColor(colors.purple)
@@ -345,10 +410,10 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setCursorPos(2,9)
 
     gui.drawButtons()
-end
+end --end page2
 
 function gui.page3(itemsInfo, allData) -- Items
-    gui.drawHeader()
+    gui.clearScreen()
 
     gui.monitor.setCursorPos(2,3)
     gui.monitor.setTextColor(colors.lime)
@@ -402,10 +467,10 @@ function gui.page3(itemsInfo, allData) -- Items
     end
 
     gui.drawButtons()
-end
+end --end page3
 
 function gui.page4(fluidInfo) -- Fluids
-    gui.drawHeader()
+    gui.clearScreen()
     if fluidInfo == nil then
         gui.monitor.setCursorPos(2, 3)
         gui.monitor.write('No fluid information found.')
@@ -465,17 +530,22 @@ function gui.page4(fluidInfo) -- Fluids
         gui.monitor.write('No fluid information found.')
     end
     gui.drawButtons()
-end
+end --end page4
 
 function gui.page5(allData)
-    gui.drawHeader()
+    while gui.searching do
+        os.sleep(0.5)
+    end
+    gui.populatePossibleAnswers(allData)
+    gui.clearScreen()
+    --gui.drawHeader()
     gui.monitor.setBackgroundColor(colors.lightGray)
     gui.monitor.setCursorPos(2, 3)
     for i=2, gui.width-1 do
         gui.monitor.write(' ')
     end
     gui.monitor.setCursorPos(2, 3)
-    gui.monitor.write('Search Items...')
+    gui.monitor.write('Search for items...')
     gui.monitor.setBackgroundColor(colors.gray)
     gui.monitor.setCursorPos(2, 5)
     gui.populateTable(allData)
@@ -493,12 +563,12 @@ function gui.page5(allData)
         end
     end
     gui.drawButtons()
-end
+    gui.monitor.setBackgroundColor(colors.lightGray)
+    gui.monitor.setCursorPos(2, 3)
+end --end page5
 
 function gui.page6(allData)
-    gui.drawHeader()
-
-    --gui.monitor.setBackgroundColor(colors.gray)
+    gui.clearScreen()
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.setCursorPos(2, 3)
     gui.monitor.write('At a Glance:') --Watch List
@@ -510,7 +580,6 @@ function gui.page6(allData)
             gui.log('Error in large packet, size is 0.')
         end
         if type(allData[selection]) == 'table' then
-            --gui.monitor.write(gui.resizeString(allData[i-3]['displayName']))
             gui.monitor.write(gui.resizeString(allData[selection]['displayName']))
             gui.monitor.setTextColor(colors.brown)
             gui.monitor.setCursorPos(gui.width*gui.widthFactor,i)
@@ -521,10 +590,10 @@ function gui.page6(allData)
     end
 
     gui.drawButtons()
-end
+end --end page6
 
 function gui.page7(cellsInfo)
-    gui.drawHeader()
+    gui.clearScreen()
     gui.monitor.setTextColor(colors.yellow)
     if cellsInfo == nil then
         gui.monitor.setCursorPos(2, 3)
@@ -568,10 +637,10 @@ function gui.page7(cellsInfo)
         gui.monitor.write('No cells information found.')
     end
     gui.drawButtons()
-end
+end --end page7
 
 function gui.page8(cpuInfo)
-    gui.drawHeader()
+    gui.clearScreen()
     if cpuInfo == nil then
         gui.monitor.setCursorPos(2, 3)
         gui.monitor.write('No crafting CPUs found.')
@@ -614,10 +683,10 @@ function gui.page8(cpuInfo)
         gui.monitor.write('No crafting CPUs found.')
     end
     gui.drawButtons()
-end
+end --end page8
 
 function gui.page9(itemsInfo)
-    gui.drawHeader()
+    gui.clearScreen()
     table.sort(gui.logList , gui.sortLogElements)
     gui.monitor.setBackgroundColor(colors.black)
     for i=3, gui.height-3 do
@@ -626,21 +695,22 @@ function gui.page9(itemsInfo)
             gui.monitor.write(' ')
         end
     end
-    for i=1, gui.height-5 do
+    for i=1, gui.height-4 do
         if gui.logList[i] == nil then
             break
         end
         
         gui.monitor.setCursorPos(1,gui.height-i-2)
+        --write(gui.logList[i]['time']..' '..gui.logList[i]['message'])
         gui.monitor.write(gui.logList[i]['time']..' '..gui.logList[i]['message'])
     end
     gui.drawButtons()
-end
+end --end page9
 
 function gui.pageN_format(itemsInfo, energyInfo)
     gui.drawHeader()
 
     gui.drawButtons()
-end
+end --end 
 
 return gui

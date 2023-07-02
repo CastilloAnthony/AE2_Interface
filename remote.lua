@@ -6,7 +6,7 @@ local remote = {}
 remote.modem = nil
 remote.data = nil
 remote.allData = nil
-
+remote.gettingData = false
 function remote.write(text)
     if text ~= nil then
         textutils.slowWrite(text)
@@ -172,38 +172,51 @@ function remote.getComputerInfo()
 end --end getComputerInfo
 
 function remote.getPackets()
+    remote.gettingData = true
     gui.log('Retrieving data...')
     remote.data = remote.latestData()
     remote.allData = remote.requestAllData()
     gui.log('Packets recieved!')
+    remote.gettingData = false
 end
 
-function remote.main()
-    local timerID = os.startTimer(0)
+function remote.eventHandler()
+    --local timerID = os.startTimer(0.5)
+    --remote.getPackets()
+    --gui.main(remote.data, remote.allData)
     --local event, arg1, arg2, arg3, arg4, arg5
     while true do
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
         if event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3)
-            gui.main(remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData)
+            gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         elseif event == 'modem_message' then
             if arg2 == 7 then
                 local file = fs.open('server.key', 'r')
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
-                    remote.getPackets()
-                    gui.main(remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData)
-                    timerID = os.startTimer(16)
+                    if arg4['packet']['type'] == 'newDataAvailable' then
+                        remote.getPackets()
+                        gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
+                        --timerID = os.startTimer(16)
+                    end
                 end
             end
-        elseif event == 'timer' and arg1 == timerID then
-            timerID = os.startTimer(16)
-            remote.getPackets()
-            gui.main(remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData)
+        --elseif event == 'timer' and arg1 == timerID then
+            --timerID = os.startTimer(0.5)
+            --gui.main(remote.data, remote.allData)
         end
     end
 end --end main
+
+function remote.guiTime()
+    --remote.getPackets()
+    while true do
+        gui.updateTime()
+        os.sleep(0.5)
+    end
+end
 
 function remote.initialize()
     local _, y = term.getSize()
@@ -239,8 +252,9 @@ function remote.initialize()
         end
     end
     gui.initialize(term)
-    remote.main()
-    --parallel.waitForAny(remote.eventHandler, remote.guiLoop)--, remote.mainLoop)
+    remote.getPackets()
+    gui.main(remote.data, remote.allData)
+    parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.mainLoop)
 end --end initialize
 
 return remote
