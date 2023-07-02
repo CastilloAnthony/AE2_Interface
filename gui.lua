@@ -56,6 +56,35 @@ function gui.log(string)
     end
 end --end log
 
+function gui.main(data, allData)
+    if data == nil or allData == nil then
+        gui.log('No data was given.')
+        return
+    end
+    --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo
+    gui.readSettings()
+    --gui.initialize(gui.monitor)
+    if gui.settings['currentPage'] == 1 then
+        gui.page1(data['computer'], data['time'], data['items'], data['energy'], data['fluids'])
+    elseif gui.settings['currentPage'] == 2 then
+        gui.page2(data['energy'])
+    elseif gui.settings['currentPage'] == 3 then
+        gui.page3(data['items'], allData)
+    elseif gui.settings['currentPage'] == 4 then
+        gui.page4(data['fluids'])
+    elseif gui.settings['currentPage'] == 5 then
+        gui.page5(allData)
+    elseif gui.settings['currentPage'] == 6 then
+        gui.page6(allData)
+    elseif gui.settings['currentPage'] == 7 then
+        gui.page7(data['cells'])
+    elseif gui.settings['currentPage'] == 8 then
+        gui.page8(data['cpus'])
+    elseif gui.settings['currentPage'] == 9 then
+        gui.page9()
+    end
+end --end main()
+
 function gui.sortLogElements(a, b)
     return tonumber(a['order']) > tonumber(b['order'])
 end --end sorLogElements
@@ -104,35 +133,6 @@ function gui.checkIfInTable(table, element)
     end
     return false
 end --end checkIfInTable
-
-function gui.main(data, allData)
-    if data == nil or allData == nil then
-        gui.log('No data was given.')
-        return
-    end
-    --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo
-    gui.readSettings()
-    --gui.initialize(gui.monitor)
-    if gui.settings['currentPage'] == 1 then
-        gui.page1(data['computer'], data['time'], data['items'], data['energy'], data['fluids'])
-    elseif gui.settings['currentPage'] == 2 then
-        gui.page2(data['energy'])
-    elseif gui.settings['currentPage'] == 3 then
-        gui.page3(data['items'], allData)
-    elseif gui.settings['currentPage'] == 4 then
-        gui.page4(data['fluids'])
-    elseif gui.settings['currentPage'] == 5 then
-        gui.page5(allData)
-    elseif gui.settings['currentPage'] == 6 then
-        gui.page6(allData)
-    elseif gui.settings['currentPage'] == 7 then
-        gui.page7(data['cells'])
-    elseif gui.settings['currentPage'] == 8 then
-        gui.page8(data['cpus'])
-    elseif gui.settings['currentPage'] == 9 then
-        gui.page9()
-    end
-end --end main()
 
 function gui.readSettings()
     if not fs.exists('settings') then
@@ -183,12 +183,6 @@ function gui.populatePossibleAnswers(allData)
     end
 end --end populatePossibleAnswers
 
-function gui.changeColor() -- Not Used
-    while gui.searching do
-        gui.monitor.setBackgroundColor(colors.lightGray)
-    end
-end --end changeColor
-
 function gui.searchPartialComplete(text)
     gui.monitor.setBackgroundColor(colors.lightGray)
     return completion.choice(string.lower(text), gui.possible)
@@ -214,38 +208,16 @@ function gui.clickedButton(button, x, y)
                         gui.monitor.write(' ')
                     end
                     gui.monitor.setCursorPos(2,3)
-                    
-                    --gui.monitor.setBackgroundColor(colors.lightGray)
                     local userInput = read(nil, gui.settings['searchHistory'], gui.searchPartialComplete)
                     gui.userSearch = string.lower(userInput)
                     gui.searching = false
                     gui.log('Usr Inpt: '..gui.userSearch)
-                    --gui.userSearchTable = {}
                 end
             end
         end
     end
     return false
 end --end clickedButton
-
-function gui.changeSettings(currentPage, preferredItems) --Not used
-    if currentPage == nil and preferredItems == nil then
-        return
-    end
-    if not fs.exists('settings') then
-        gui.writeSettings('default')
-    end
-    local file = fs.open('settings', 'r')
-    local settings = textutils.unserialize(file.readAll())
-    file.close()
-    if currentPage ~= nil then
-        settings['currentPage'] = currentPage
-    end
-    if preferredItems ~= nil then
-        settings['preferredItems'] = preferredItems
-    end
-    gui.writeSettings(settings)
-end --end changeSettings
 
 function gui.resizeString(string, smaller)
     if smaller == nil then
@@ -270,23 +242,6 @@ function gui.updateTime()
     gui.monitor.setTextColor(tempText)
     gui.monitor.setBackgroundColor(tempBack)
 end
-
-function gui.drawHeader()
-    gui.monitor.setBackgroundColor(colors.gray)
-    gui.monitor.setTextColor(colors.white)
-    for i=1, gui.height do
-        for j=1, gui.width do
-            if i == 3 and gui.searching == true then
-                break
-            end
-            gui.monitor.setCursorPos(j,i)
-            gui.monitor.write(' ')
-        end
-    end
-    gui.monitor.setCursorPos(1,1)
-    gui.monitor.write(os.date())
-    gui.monitor.setCursorPos(2,2)
-end --end drawHeader
 
 function gui.clearScreen()
     gui.monitor.setBackgroundColor(colors.gray)
@@ -313,9 +268,8 @@ function gui.drawButtons()
     gui.monitor.setCursorPos(1, gui.height)
 end --end drawButtons
 
-function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
+function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo) -- Main Page
     gui.clearScreen()
-
     gui.monitor.setCursorPos(2, 3)
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.write('Snapshot Report: ')
@@ -330,7 +284,6 @@ function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
     gui.monitor.write('Name: '..serverInfo['label'])
     gui.monitor.setCursorPos(2,8)
     gui.monitor.write('ID: '..serverInfo['id'])
-    
     gui.monitor.setCursorPos(2,10)
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.write('Power: ')
@@ -339,24 +292,22 @@ function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
     gui.monitor.write((math.floor((energyInfo['currentStorage']/energyInfo['maxStorage'])*1000)/10)..'%')
     gui.monitor.setCursorPos(2,11)
     gui.monitor.setBackgroundColor(colors.red)
-    for i=1, (energyInfo['currentStorage']/energyInfo['maxStorage'])*gui.width-1 do
+    for i=1, (energyInfo['currentStorage']/energyInfo['maxStorage'])*gui.width-2 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
-
     gui.monitor.setCursorPos(2,13)
     gui.monitor.setTextColor(colors.lime)
-    gui.monitor.write('Items: ')--..(math.floor((itemsInfo['currentStorage']/itemsInfo['maxStorage'])*1000)/10)..'%')
+    gui.monitor.write('Items: ')
     gui.monitor.setTextColor(colors.brown)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,13)
     gui.monitor.write((math.floor(itemsInfo['currentStorage']/itemsInfo['maxStorage']*1000)/10)..'%')
     gui.monitor.setCursorPos(2,14)
     gui.monitor.setBackgroundColor(colors.green)
-    for i=1, (itemsInfo['currentStorage']/itemsInfo['maxStorage'])*gui.width-1 do
+    for i=1, (itemsInfo['currentStorage']/itemsInfo['maxStorage'])*gui.width-2 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
-
     gui.monitor.setCursorPos(2,16)
     gui.monitor.setTextColor(colors.lightBlue)
     gui.monitor.write('Fluids:')
@@ -365,17 +316,15 @@ function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo)
     gui.monitor.write((math.floor(fluidInfo['currentStorage']/fluidInfo['maxStorage']*1000)/10)..'%')
     gui.monitor.setCursorPos(2,17)
     gui.monitor.setBackgroundColor(colors.blue)
-    for i=1, (fluidInfo['currentStorage']/fluidInfo['maxStorage'])*gui.width-1 do
+    for i=1, (fluidInfo['currentStorage']/fluidInfo['maxStorage'])*gui.width-2 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
-
     gui.drawButtons()
 end --end page1
 
 function gui.page2(energyInfo) -- Energy
     gui.clearScreen()
-
     gui.monitor.setCursorPos(2, 3)
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.write('Power: ')
@@ -384,7 +333,7 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.write((math.floor((energyInfo['currentStorage']/energyInfo['maxStorage'])*1000)/10)..'%')
     gui.monitor.setCursorPos(2,4)
     gui.monitor.setBackgroundColor(colors.red)
-    for i=1, (energyInfo['currentStorage']/energyInfo['maxStorage'])*gui.width-1 do
+    for i=1, (energyInfo['currentStorage']/energyInfo['maxStorage'])*gui.width-2 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
@@ -406,24 +355,21 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
     gui.monitor.write(math.floor(energyInfo['usage']*2.5)..' '..'RF/t')
-    --gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,9)
-
     gui.drawButtons()
 end --end page2
 
 function gui.page3(itemsInfo, allData) -- Items
     gui.clearScreen()
-
     gui.monitor.setCursorPos(2,3)
     gui.monitor.setTextColor(colors.lime)
-    gui.monitor.write('Items: ')--..(math.floor((itemsInfo['currentStorage']/itemsInfo['maxStorage'])*1000)/10)..'%')
+    gui.monitor.write('Items: ')
     gui.monitor.setTextColor(colors.brown)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,3)
     gui.monitor.write((math.floor(itemsInfo['currentStorage']/itemsInfo['maxStorage']*1000)/10)..'%')
     gui.monitor.setCursorPos(2,4)
     gui.monitor.setBackgroundColor(colors.green)
-    for i=1, (itemsInfo['currentStorage']/itemsInfo['maxStorage'])*gui.width-1 do
+    for i=1, (itemsInfo['currentStorage']/itemsInfo['maxStorage'])*gui.width-2 do
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
@@ -445,7 +391,6 @@ function gui.page3(itemsInfo, allData) -- Items
     gui.monitor.setTextColor(colors.brown)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
     gui.monitor.write(''..itemsInfo['availableStorage'])
-
     gui.monitor.setCursorPos(2,10)
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.write('Item')
@@ -458,14 +403,11 @@ function gui.page3(itemsInfo, allData) -- Items
         end
         gui.monitor.setTextColor(colors.lime)
         gui.monitor.setCursorPos(2,i+10)
-        
-        --gui.monitor.write(gui.resizeString(allData[i-3]['displayName']))
         gui.monitor.write(gui.resizeString(allData[i]['displayName']))
         gui.monitor.setTextColor(colors.brown)
         gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
         gui.monitor.write(''..allData[i]['amount'])
     end
-
     gui.drawButtons()
 end --end page3
 
@@ -475,7 +417,6 @@ function gui.page4(fluidInfo) -- Fluids
         gui.monitor.setCursorPos(2, 3)
         gui.monitor.write('No fluid information found.')
     elseif #fluidInfo['listFluid'] >= 1 then
-        --textutils.slowWrite(fluidInfo['listFluid'][1]['amount']..' '..fluidInfo['listFluid'][2]['amount']..' '..fluidInfo['listFluid'][3]['amount'])
         table.sort(fluidInfo['listFluid'], gui.compareByAmount)
         gui.monitor.setCursorPos(2,3)
         gui.monitor.setTextColor(colors.lightBlue)
@@ -485,7 +426,7 @@ function gui.page4(fluidInfo) -- Fluids
         gui.monitor.write((math.floor(fluidInfo['currentStorage']/fluidInfo['maxStorage']*1000)/10)..'%')
         gui.monitor.setCursorPos(2,4)
         gui.monitor.setBackgroundColor(colors.blue)
-        for i=1, (fluidInfo['currentStorage']/fluidInfo['maxStorage'])*gui.width-1 do
+        for i=1, (fluidInfo['currentStorage']/fluidInfo['maxStorage'])*gui.width-2 do
             gui.monitor.write(' ')
         end
         gui.monitor.setBackgroundColor(colors.gray)
@@ -507,9 +448,7 @@ function gui.page4(fluidInfo) -- Fluids
         gui.monitor.setTextColor(colors.cyan)
         gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
         gui.monitor.write(''..fluidInfo['availableStorage'])
-        --fluidInfo['listFluid'][i] = ['name'], ['amount'], ['tags'], ['isCraftable']
         gui.monitor.setTextColor(colors.yellow)
-
         gui.monitor.setCursorPos(2,10)
         gui.monitor.write('Fluid')
         gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
@@ -532,13 +471,12 @@ function gui.page4(fluidInfo) -- Fluids
     gui.drawButtons()
 end --end page4
 
-function gui.page5(allData)
+function gui.page5(allData) -- Search
     while gui.searching do
         os.sleep(0.5)
     end
     gui.populatePossibleAnswers(allData)
     gui.clearScreen()
-    --gui.drawHeader()
     gui.monitor.setBackgroundColor(colors.lightGray)
     gui.monitor.setCursorPos(2, 3)
     for i=2, gui.width-1 do
@@ -567,11 +505,11 @@ function gui.page5(allData)
     gui.monitor.setCursorPos(2, 3)
 end --end page5
 
-function gui.page6(allData)
+function gui.page6(allData) -- Watch List
     gui.clearScreen()
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.setCursorPos(2, 3)
-    gui.monitor.write('At a Glance:') --Watch List
+    gui.monitor.write('At a Glance:')
     for i=4, gui.height-3 do
         local selection = math.random(1,#allData)
         gui.monitor.setTextColor(colors.lime)
@@ -592,7 +530,7 @@ function gui.page6(allData)
     gui.drawButtons()
 end --end page6
 
-function gui.page7(cellsInfo)
+function gui.page7(cellsInfo) -- Cells
     gui.clearScreen()
     gui.monitor.setTextColor(colors.yellow)
     if cellsInfo == nil then
@@ -639,7 +577,7 @@ function gui.page7(cellsInfo)
     gui.drawButtons()
 end --end page7
 
-function gui.page8(cpuInfo)
+function gui.page8(cpuInfo) -- CPUs
     gui.clearScreen()
     if cpuInfo == nil then
         gui.monitor.setCursorPos(2, 3)
@@ -685,7 +623,7 @@ function gui.page8(cpuInfo)
     gui.drawButtons()
 end --end page8
 
-function gui.page9(itemsInfo)
+function gui.page9(itemsInfo) -- Logs
     gui.clearScreen()
     table.sort(gui.logList , gui.sortLogElements)
     gui.monitor.setBackgroundColor(colors.black)
@@ -699,9 +637,7 @@ function gui.page9(itemsInfo)
         if gui.logList[i] == nil then
             break
         end
-        
         gui.monitor.setCursorPos(1,gui.height-i-2)
-        --write(gui.logList[i]['time']..' '..gui.logList[i]['message'])
         gui.monitor.write(gui.logList[i]['time']..' '..gui.logList[i]['message'])
     end
     gui.drawButtons()

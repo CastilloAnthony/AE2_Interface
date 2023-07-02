@@ -156,7 +156,11 @@ function server.checkIfInTable(element, table)
 end --end checkIfInTable
 
 function server.getItemStorageInfo()
-  local items = server.getAllItemsInfo()
+  local items = server.getAllItemsInfo() -- got nil value for items
+  while items == nil do
+    items = server.getAllItemsInfo()
+    os.sleep(0)
+  end
   local topFive = {items[1], items[2], items[3], items[4], items[5]} --Knowledge Essence, Chromatic Steel, Currency, tetc. (important items)
   table.sort(topFive, server.comparison)
   local count = 0
@@ -196,6 +200,14 @@ function server.getTimeInfo()
   return os.date()
 end --end getTimeInfo
 
+function server.getComputerInfo()
+  return {['id'] = os.computerID(), ['label'] = os.computerLabel()}
+end --end getComputerInfo
+
+function server.gatherData()
+  return {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+end
+
 function server.loadLatestSnapshot()
   local latest = nil
   for _, i in pairs(fs.list('data')) do
@@ -211,18 +223,8 @@ function server.loadLatestSnapshot()
   return data
 end --end loadLAtestSnapshot
 
-function server.saveSnapshot(data, lastSnapshotTime)
-  if (os.clock() - lastSnapshotTime) >= 15 then
-    local filename = 'data/'..os.epoch()
-    local file = fs.open(filename, 'w')
-    file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
-    file.close()
-    server.write('Saved snapshot to: '..filename)
-    --server.broadcast()
-    server.broadcastDataAvailable()
-    return os.clock()
-  end
-  while #fs.list('data') > 40 do
+function server.deleteSnapshots()
+  while #fs.list('data') > 4 do
     local oldest = nil
     for _, i in pairs(fs.list('data')) do
       if oldest == nil then
@@ -234,13 +236,26 @@ function server.saveSnapshot(data, lastSnapshotTime)
     server.write('Deleting snapshot: data/'..oldest)
     fs.delete('data/'..oldest)
   end
-end --end saveSnapshot
+end --end deleteSnapshots
 
-function server.getComputerInfo()
-  return {['id'] = os.computerID(), ['label'] = os.computerLabel()}
-end --end getComputerInfo
+function server.generateSnapshots() -- Run in Parallel
+  while true do
+    if math.floor(os.epoch('local')/1000) % 5 == 0 then
+      local data = server.gatherData() --{['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+      local filename = 'data/'..tostring(math.floor(os.epoch()/1000))
+      local file = fs.open(filename, 'w')
+      file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
+      file.close()
+      server.write('Saved snapshot to: '..filename)
+      server.broadcastDataAvailable()
+      server.deleteSnapshots()
+      os.sleep(3)
+    end
+    os.sleep(0)
+  end
+end --end generateSnapshots
 
-function server.eventHandler()
+function server.eventHandler() -- Run in Parallel
   while true do
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'modem_message' then
@@ -251,25 +266,20 @@ function server.eventHandler()
   end
 end --end eventHandler
 
-function server.main()
-  local lastSnapshotTime = os.clock()
+function server.main() -- Run in Parallel
   while true do
-    local data = {['computer'] = server.getComputerInfo(), ['time'] = server.getTimeInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
-    local temp = server.saveSnapshot(data, lastSnapshotTime)
-    if temp ~= nil then
-      lastSnapshotTime = temp
-    end
+    local data = server.gatherData()
     gui.main(data, server.getAllItemsInfo())
     os.sleep(0)
   end
 end --end main
 
-function server.guiTime()
+function server.guiTime() -- Run in Parallel
   while true do
     gui.updateTime()
     os.sleep(0.5)
   end
-end
+end --end guiTime
 
 function server.initialize()
   local _, y = term.getSize()
@@ -316,7 +326,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.eventHandler)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler)
 end --end initialize
 
 return server
