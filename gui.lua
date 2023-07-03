@@ -85,6 +85,13 @@ function gui.main(data, allData)
     end
 end --end main()
 
+function gui.updateLogPage()
+    gui.readSettings()
+    if gui.settings['currentPage'] == 9 then
+        gui.page9()
+    end
+end
+
 function gui.sortLogElements(a, b)
     return tonumber(a['order']) > tonumber(b['order'])
 end --end sorLogElements
@@ -623,7 +630,7 @@ function gui.page8(cpuInfo) -- CPUs
     gui.drawButtons()
 end --end page8
 
-function gui.page9(itemsInfo) -- Logs
+function gui.page9() -- Logs
     gui.clearScreen()
     table.sort(gui.logList , gui.sortLogElements)
     gui.monitor.setBackgroundColor(colors.black)

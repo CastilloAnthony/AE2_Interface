@@ -157,10 +157,14 @@ end --end checkIfInTable
 
 function server.getItemStorageInfo()
   local items = server.getAllItemsInfo() -- got nil value for items
-  while items == nil do
-    items = server.getAllItemsInfo()
-    os.sleep(0)
-  end
+  if items == nil then
+    gui.log('Encountered an error while reading data. (Was the AE network down?)')
+    gui.updateLogPage()
+    while items == nil do
+      items = server.getAllItemsInfo()
+      os.sleep(0)
+    end
+  end  
   local topFive = {items[1], items[2], items[3], items[4], items[5]} --Knowledge Essence, Chromatic Steel, Currency, tetc. (important items)
   table.sort(topFive, server.comparison)
   local count = 0
@@ -205,7 +209,16 @@ function server.getComputerInfo()
 end --end getComputerInfo
 
 function server.gatherData()
-  return {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+  local data = {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+  if data == nil then
+    gui.log('Encountered an error while reading data. (Was the AE network down?)')
+    gui.updateLogPage()
+    while data == nil do
+      data = {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+      os.sleep(0)
+    end
+  end
+  return data
 end
 
 function server.loadLatestSnapshot()
