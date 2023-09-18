@@ -27,7 +27,8 @@ end --end moveCursor
 
 function server.checkForBridge()
   for _, i in pairs(peripheral.getNames()) do
-    if peripheral.getType(i) == 'meBridge' then
+    --if peripheral.getType(i) == 'meBridge' then
+    if string.find(peripheral.getType(i), 'meBridge') then
       if peripheral.call(i, 'isConnected') then
         server.write('Bridge found!')
         return peripheral.wrap(i)
