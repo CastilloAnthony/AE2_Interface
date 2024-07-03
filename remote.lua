@@ -3,10 +3,12 @@ local gui = require('gui')
 
 local remote = {}
 
+remote.monitor = nil
 remote.modem = nil
 remote.data = nil
 remote.allData = nil
 remote.gettingData = false
+
 function remote.write(text)
     if text ~= nil then
         textutils.slowWrite(text)
@@ -35,6 +37,26 @@ function remote.checkForWirelessModem()
     term.write('Could not find a wireless modem.')
     return false
 end --end checkForWirelessModem
+
+function remote.checkForMonitor()
+  for _, i in pairs(peripheral.getNames()) do
+    if peripheral.getType(i) == 'monitor' then
+      remote.write('Monitor found!')
+      return peripheral.wrap(i)
+    end
+  end
+  remote.write('Could not find a monitor, using terminal.')
+  return term
+end --end checkForMonitor
+
+function remote.initializeMonitor()
+  remote.monitor.clear()
+  remote.monitor.setCursorPos(1,1)
+  if remote.monitor ~= term then
+    remote.monitor.setTextScale(1)
+  end
+  gui.initialize(remote.monitor)
+end --end initializeMonitor
 
 function remote.performHandshake()
     -- packet = {['message'] = 'This is a message', ['verify'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}} --A standard packet transmission
@@ -219,6 +241,8 @@ function remote.guiTime()
 end
 
 function remote.initialize()
+    remote.monitor = remote.checkForMonitor()
+    remote.initializeMonitor(monitor)
     local _, y = term.getSize()
     term.setCursorPos(1, y)
     term.clear()
