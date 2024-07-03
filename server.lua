@@ -233,10 +233,8 @@ function server.loadLatestSnapshot()
   end
   while latest == nil
     os.sleep(1)
+  end
   local file = fs.open('data/'..latest, 'r')
-  else:
-    
-    local file = fs.open('data/'..latest, 'r')
   local data = file.readAll()
   file.close()
   return data
