@@ -11,9 +11,10 @@ remote.gettingData = false
 
 function remote.write(text)
     if text ~= nil then
-        textutils.slowWrite(text)
+        --textutils.slowWrite(text)
+        gui.log(text)
     end
-    term.scroll(1)
+    --term.scroll(1)
     local _, y = term.getCursorPos()
     term.setCursorPos(1, y)
 end --end write
@@ -34,7 +35,8 @@ function remote.checkForWirelessModem()
             end
         end
     end
-    term.write('Could not find a wireless modem.')
+    --term.write('Could not find a wireless modem.')
+    remote.write('Could not find a wireless modem.')
     return false
 end --end checkForWirelessModem
 
@@ -275,7 +277,7 @@ function remote.initialize()
             noKeys = false
         end
     end
-    gui.initialize(term)
+    --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
     parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.mainLoop)
