@@ -231,7 +231,7 @@ function server.loadLatestSnapshot()
       latest = tonumber(i)
     end
   end
-  while latest == nil
+  while latest == nil do
     os.sleep(1)
   end
   local file = fs.open('data/'..latest, 'r')
