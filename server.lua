@@ -194,7 +194,8 @@ function server.getCPUInfo()
 end
 
 function server.getCellsInfo()
-  return server.bridge.listCells()
+  --return server.bridge.listCells()
+  return {{bytesPerType = 8, cellType = "item", item = "ae2:item_storage_cell_1k", totalBytes = 1024}}
 end
 
 function server.getFluidsInfo()
