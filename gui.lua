@@ -152,7 +152,7 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['recentPower'] = 0}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['recentPower'] = 0, ['recentDeltaPower']=0}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -367,7 +367,11 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.write('Delta Power: ')
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
-    gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
+    if energyInfo['currentStorage'] != gui.settings['recentPower']) then
+        gui.settings['recentDeltaPower'] = math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])
+    end
+    gui.monitor.write(gui.settings['recentDeltaPower']..' '..'RF/t')
+    --gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
     gui.drawButtons()
