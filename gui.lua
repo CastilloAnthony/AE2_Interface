@@ -152,7 +152,7 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['recentPower'] = 0}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -363,7 +363,13 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
     gui.monitor.write(math.floor(energyInfo['usage']*2.5)..' '..'RF/t')
     gui.monitor.setCursorPos(2,9)
+    gui.monitor.write('Delta Power: ')
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,8)
+    gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
+    gui.monitor.setCursorPos(2,10)
     gui.drawButtons()
+    gui.settings['recentPower'] = energyInfo['currentStorage']
 end --end page2
 
 function gui.page3(itemsInfo, allData) -- Items
