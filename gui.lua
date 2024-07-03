@@ -368,7 +368,7 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
     if energyInfo['currentStorage'] ~= gui.settings['recentPower'] then
-        gui.settings['recentDeltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['recentPower'])*10)/10
+        gui.settings['recentDeltaPower'] = energyInfo['currentStorage']-gui.settings['recentPower']
         gui.settings['recentPower'] = energyInfo['currentStorage']
     end
     gui.monitor.write(''..gui.settings['recentDeltaPower']..' '..'AE/5s')
