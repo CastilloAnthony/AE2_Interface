@@ -243,8 +243,6 @@ function remote.guiTime()
 end
 
 function remote.initialize()
-    remote.monitor = remote.checkForMonitor()
-    remote.initializeMonitor(monitor)
     local _, y = term.getSize()
     term.setCursorPos(1, y)
     term.clear()
@@ -277,6 +275,8 @@ function remote.initialize()
             noKeys = false
         end
     end
+    remote.monitor = remote.checkForMonitor()
+    remote.initializeMonitor()
     --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
