@@ -30,13 +30,13 @@ function remote.checkForWirelessModem()
     for _, i in pairs(peripheral.getNames()) do
         if (peripheral.getType(i) == 'modem') then
             if (peripheral.call(i, 'isWireless')) then
-                remote.write('Wireless modem found!')
+                --remote.write('Wireless modem found!')
                 return peripheral.wrap(i) 
             end
         end
     end
     --term.write('Could not find a wireless modem.')
-    remote.write('Could not find a wireless modem.')
+    --remote.write('Could not find a wireless modem.')
     return false
 end --end checkForWirelessModem
 
@@ -246,8 +246,6 @@ function remote.initialize()
     local _, y = term.getSize()
     term.setCursorPos(1, y)
     term.clear()
-    remote.monitor = remote.checkForMonitor()
-    remote.initializeMonitor()
     remote.write('Initializing...')
     textutils.slowWrite('Initializing...')
     if os.computerLabel() == nil then
@@ -270,6 +268,8 @@ function remote.initialize()
         term.scroll(1)
         textutils.slowWrite('Wireless modem found!')
     end
+    remote.monitor = remote.checkForMonitor()
+    remote.initializeMonitor()
     remote.initializeNetwork()
     remote.write('Attempting handshake...')
     term.scroll(1)
