@@ -246,23 +246,29 @@ function remote.initialize()
     local _, y = term.getSize()
     term.setCursorPos(1, y)
     term.clear()
+    remote.monitor = remote.checkForMonitor()
+    remote.initializeMonitor()
     remote.write('Initializing...')
-    gui.log('Initializing...')
+    textutils.slowWrite('Initializing...')
     if os.computerLabel() == nil then
         os.setComputerLabel('RemoteDevice')
     end
     remote.write('Computer ID: '..remote.getComputerInfo()['id'])
+    textutils.slowWrite('Computer ID: '..remote.getComputerInfo()['id'])
     remote.write('Computer Name: '..remote.getComputerInfo()['label'])
-    gui.log('Comp ID: '..remote.getComputerInfo()['id'])
-    gui.log('Comp Name: '..remote.getComputerInfo()['label'])
+    textutils.slowWrite('Computer Name: '..remote.getComputerInfo()['label'])
     remote.modem = remote.checkForWirelessModem()
     if remote.modem == false then
+        gui.log('Could not find a Wireless modem.')
+        textutils.slowWrite('Could not find a Wireless modem.')
         return false
     else
         gui.log('Wireless modem found!')
+        textutils.slowWrite('Wireless modem found!'))
     end
     remote.initializeNetwork()
     remote.write('Attempting handshake...')
+    textutils.slowWrite('Attempting handshake...')
     local noHandshake = true
     while noHandshake do
         if remote.performHandshake() == true then
@@ -275,8 +281,6 @@ function remote.initialize()
             noKeys = false
         end
     end
-    remote.monitor = remote.checkForMonitor()
-    remote.initializeMonitor()
     --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
