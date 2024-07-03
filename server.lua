@@ -112,10 +112,10 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
         if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
           if message['message'] == 'latestSnapshot' then
             server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = server.loadLatestSnapshot()}})
-            server.write('Sent small packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+            server.write('Sent snapshot packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'allData' then
             server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.getAllItemsInfo()}})
-            server.write('Sent large packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+            server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'keys' then
             server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
             server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
