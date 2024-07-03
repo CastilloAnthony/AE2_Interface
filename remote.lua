@@ -268,8 +268,6 @@ function remote.initialize()
         term.scroll(1)
         textutils.slowWrite('Wireless modem found!')
     end
-    remote.monitor = remote.checkForMonitor()
-    remote.initializeMonitor()
     remote.initializeNetwork()
     remote.write('Attempting handshake...')
     term.scroll(1)
@@ -286,6 +284,8 @@ function remote.initialize()
             noKeys = false
         end
     end
+    remote.monitor = remote.checkForMonitor()
+    remote.initializeMonitor()
     --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
