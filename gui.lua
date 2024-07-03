@@ -367,7 +367,7 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.write('Delta Power: ')
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
-    if energyInfo['currentStorage'] ~= gui.settings['recentPower']) then
+    if energyInfo['currentStorage'] ~= gui.settings['recentPower'] then
         gui.settings['recentDeltaPower'] = math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])
     end
     gui.monitor.write(gui.settings['recentDeltaPower']..' '..'RF/t')
