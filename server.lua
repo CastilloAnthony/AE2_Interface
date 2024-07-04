@@ -119,6 +119,9 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
           elseif message['message'] == 'keys' then
             server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
             server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+          elseif message['message'] == 'craft' then
+            server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craft(message['packet']['data'])}})
+            server.write('Crafting request from '..message['verify']['label']..' for item with fingerprint '..message['packet']['data'])
           else
            -- server.write('Unknown request.')
           end
