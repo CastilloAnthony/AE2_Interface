@@ -2,7 +2,6 @@ local completion = require('cc.completion')
 local gui = {}
 
 gui.totalPages = 9
-gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
 gui.width = nil
 gui.height = 100
 gui.widthFactor = 7/10
@@ -10,6 +9,7 @@ gui.monitor = nil
 gui.logList = {}
 gui.logCount = 0
 gui.userSearch = ''
+gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
 gui.userSearchTable = {}
 gui.searching = false
 gui.possible = {}
