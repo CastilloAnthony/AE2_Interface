@@ -295,7 +295,7 @@ function server.eventHandler() -- Run in Parallel
     if event == 'modem_message' then
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
     elseif event == 'mouse_up' or event == 'monitor_touch' then
-      gui.clickedButton(arg1, arg2, arg3, server.gatherData())
+      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
     end
   end
 end --end eventHandler
