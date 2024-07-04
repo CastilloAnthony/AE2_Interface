@@ -230,7 +230,7 @@ function gui.clickedButton(button, x, y, craftables)
                         for k, v in pairs(craftables) do
                             if i == y-3 then
                                 gui.readSettings()
-                                table.insert(gui.settings['craftingQueue'], craftables[k]['fingerprint'])
+                                table.insert(gui.settings['craftingQueue'], v)
                                 gui.writeSettings()
                                 break
                             end
