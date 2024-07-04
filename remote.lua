@@ -233,6 +233,7 @@ function remote.checkCraftingQueue()
                 end
             end
             length = length - 1
+            os.sleep(1)
         end
         os.sleep(1)
     end
