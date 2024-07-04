@@ -204,6 +204,36 @@ function remote.getPackets()
     remote.gettingData = false
 end
 
+function remote.checkCraftingQueue()
+    local length = 0
+    for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
+    while length > 0 do
+        local item = table.remove(gui.settings['craftingQueue'])
+        local timerID = os.startTimer(0.05)
+        local even, side, channel, replyChannel, message, distance
+        acknowledged = False
+        while not acknowledged do
+            remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}]})
+            event, side, channel, replyChannel, message, distance = os.pullEvent()
+            if event == 'modem_message' then
+                local file = fs.open('server.key', 'r')
+                local serverKeys = textutils.unserialize(file.readAll())
+                file.close()
+                if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
+                    if message['message'] == 'Acknowledged.' then
+                        gui.writeSettings()
+                        acknowledged = True
+                        break
+                    end
+                end
+            elseif (event == 'timer') and (side == timerID) then
+                return remote.latestData()
+            end
+        end
+        length = length - 1
+    end
+end
+
 function remote.eventHandler()
     --local timerID = os.startTimer(0.5)
     --remote.getPackets()
@@ -212,7 +242,7 @@ function remote.eventHandler()
     while true do
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
         if event == 'mouse_up' or event == 'monitor_touch' then
-            gui.clickedButton(arg1, arg2, arg3)
+            gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
             gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         elseif event == 'modem_message' then
             if arg2 == 7 then
