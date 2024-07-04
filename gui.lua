@@ -345,13 +345,14 @@ function gui.page2(energyInfo, timeInfo) -- Energy
         gui.monitor.write(' ')
     end
     gui.monitor.setBackgroundColor(colors.gray)
-    gui.monitor.setTextColor(colors.purple)
 
+    --Header
+    gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,6)
-    gui.monitor.write('Info')
+    gui.monitor.write('Statistic')
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,6)
-    gui.monitor.write('AE')
+    gui.monitor.write('(AE)')
     gui.monitor.setTextColor(colors.purple)
     
     gui.monitor.setCursorPos(2,7)
@@ -381,21 +382,20 @@ function gui.page2(energyInfo, timeInfo) -- Energy
         gui.settings['storedPower'] = 0
         gui.writeSettings()
     elseif energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
-        gui.monitor.write('Delta Power: ')
-        gui.monitor.setTextColor(colors.magenta)
-        gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
+        -- gui.monitor.write('Delta Power: ')
+        -- gui.monitor.setTextColor(colors.magenta)
+        -- gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower']))
         gui.settings['deltaTime'] = math.floor((timeInfo['clock']-gui.settings['snapshotTime'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
-        gui.monitor.write(''..gui.settings['deltaPower']..' '..'/'..gui.settings['deltaTime]..'s')
+        -- gui.monitor.write(''..gui.settings['deltaPower']..'/'..gui.settings['deltaTime']..'s')
         gui.settings['snapshotTime'] = timeInfo['clock']
         gui.writeSettings()
-    else
-        gui.monitor.write('Delta Power: ')
-        gui.monitor.setTextColor(colors.magenta)
-        gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
-        gui.monitor.write(''..gui.settings['deltaPower']..' '..'/'..gui.settings['storedPower']..'s')
     end
+    gui.monitor.write('Delta Power: ')
+    gui.monitor.setTextColor(colors.magenta)
+    gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
+    gui.monitor.write(''..gui.settings['deltaPower']..'/'..gui.settings['storedPower']..'s')
     --gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,11)
