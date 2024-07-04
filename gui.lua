@@ -222,6 +222,11 @@ function gui.clickedButton(button, x, y, craftables)
                     gui.log('Usr Inpt: '..gui.userSearch)
                 end
             end
+        gui.log(x)
+        gui.log(y)
+        gui.log(gui.width)
+        gui.log(gui.widthFacto)
+        gui.log(gui.height)
         elseif 1 < x < gui.width-gui.width*gui.widthFactor and 3 < y < gui.height-2 then
             if gui.settings['currentPage'] == 6 then -- Craftables
                 if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
