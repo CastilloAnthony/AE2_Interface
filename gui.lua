@@ -51,9 +51,9 @@ function gui.log(string)
         end
         table.remove(gui.logList, oldestIndex)
     end
-    while #fs.list('logs') > 7 do
-        server.write('Deleting log: logs/'..fs.list('logs')[1])
-        fs.delete('logs/'..fs.list('logs')[1])
+    while #fs.list('./AE2_Interface/logs') > 7 do
+        server.write('Deleting log: ./AE2_Interface/logs/'..fs.list('./AE2_Interface/logs')[1])
+        fs.delete('./AE2_Interface/logs/'..fs.list('./AE2_Interface/logs')[1])
     end
 end --end log
 
@@ -143,7 +143,7 @@ function gui.checkIfInTable(table, element)
 end --end checkIfInTable
 
 function gui.readSettings()
-    if not fs.exists('settings') then
+    if not fs.exists('./AE2_Interface/settings') then
         gui.writeSettings('default')
     end
     local file = fs.open('./AE2_Interface/settings.cfg', 'r')
