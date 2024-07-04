@@ -19,7 +19,7 @@ function gui.initialize(monitor)
     gui.monitor.clear()
     gui.monitor.setCursorPos(1,1)
     gui.width, gui.height =  gui.monitor.getSize()
-    gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
+    gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0,}
 end --end initialize
 
 function gui.write(string)
@@ -153,7 +153,7 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0,}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -368,9 +368,12 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.write('Delta Power: ')
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
-    gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
-    gui.log('Previous Stored Power: '..gui.settings['storedPower'])
-    if energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
+    --gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
+    --gui.log('Previous Stored Power: '..gui.settings['storedPower'])
+    if gui.settings['storedPower'] == nil then
+        gui.settings['storedPower'] = 0
+        gui.settings['deltaPower'] = 0
+    elseif energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
     end
