@@ -1,2 +1,1 @@
-shell.setDir('AE2_Interface')
-shell.run('main.lua')
+shell.run('AE2_Interface/main.lua')
