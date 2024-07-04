@@ -203,7 +203,7 @@ function server.getFluidsInfo()
 end
 
 function server.getTimeInfo()
-  return os.date()
+  return {['date'] = os.date(), ['clock'] = os.clock()}
 end --end getTimeInfo
 
 function server.getComputerInfo()
