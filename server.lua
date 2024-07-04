@@ -86,7 +86,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
   if event == 'modem_message' then
     if (channel == 14) then
       if (message['handshake'] == true) then
-        local file = fs.open('clients', 'r')
+        local file = fs.open('./AE2_Interface/clients', 'r')
         local clients = textutils.unserialize(file.readAll())
         file.close()
         for _, i in pairs(clients) do
@@ -97,7 +97,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
           end
         end
         table.insert(clients, message['verify'])
-        local file = fs.open('clients', 'w')
+        local file = fs.open('./AE2_Interface/clients', 'w')
         file.write(textutils.serialize(clients))
         file.close()
         server.modem.transmit(14, 0, {['message'] = 'You have been added to the list of clients.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'handshake', ['success'] = true}})
@@ -105,7 +105,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
         return true 
       end
     elseif channel == 21 then
-      local file = fs.open('clients', 'r')
+      local file = fs.open('./AE2_Interface/clients', 'r')
       local clients = textutils.unserialize(file.readAll())
       file.close()
       for _, i in pairs(clients) do
@@ -239,31 +239,31 @@ end
 
 function server.loadLatestSnapshot()
   local latest = nil
-  for _, i in pairs(fs.list('data')) do
+  for _, i in pairs(fs.list('./AE2_Interface/data')) do
     if latest == nil then
       latest = tonumber(i)
     elseif tonumber(i) > latest then
       latest = tonumber(i)
     end
   end
-  local file = fs.open('data/'..latest, 'r')
+  local file = fs.open('./AE2_Interface/data/'..latest, 'r')
   local data = file.readAll()
   file.close()
   return data
 end --end loadLAtestSnapshot
 
 function server.deleteSnapshots()
-  while #fs.list('data') > 4 do
+  while #fs.list('./AE2_Interface/data') > 4 do
     local oldest = nil
-    for _, i in pairs(fs.list('data')) do
+    for _, i in pairs(fs.list('./AE2_Interface/data')) do
       if oldest == nil then
         oldest = tonumber(i)
       elseif tonumber(i) < oldest then
         oldest = tonumber(i)
       end
     end
-    server.write('Deleting snapshot: data/'..oldest)
-    fs.delete('data/'..oldest)
+    server.write('Deleting snapshot: ./AE2_Interface/data/'..oldest)
+    fs.delete('./AE2_Interface/data/'..oldest)
   end
 end --end deleteSnapshots
 
@@ -271,7 +271,7 @@ function server.generateSnapshots() -- Run in Parallel
   while true do
     if math.floor(os.epoch('local')/1000) % 5 == 0 then
       local data = server.gatherData() --{['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
-      local filename = 'data/'..tostring(math.floor(os.epoch()/1000))
+      local filename = './AE2_Interface/data/'..tostring(math.floor(os.epoch()/1000))
       local file = fs.open(filename, 'w')
       file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
       file.close()
@@ -328,25 +328,25 @@ function server.initialize()
   end
   server.write('Computer ID: '..initial['computerInfo']['id'])
   server.write('Computer Label: '..initial['computerInfo']['label'])
-  if not fs.isDir('data') then
-    fs.makeDir('data')
+  if not fs.isDir('./AE2_Interface/data') then
+    fs.makeDir('./AE2_Interface/data')
   end
   server.write('Saving data to /data/')
-  if not fs.exists('clients') then
-    local file = fs.open('clients', 'w')
+  if not fs.exists('./AE2_Interface/clients') then
+    local file = fs.open('./AE2_Interface/clients', 'w')
     file.write(textutils.serialize({server.getComputerInfo()}))
     file.close()
   end
-  if not fs.exists('server,keys') then
-    local file = fs.open('server.keys', 'w')
+  if not fs.exists('./AE2_Interface/server,keys') then
+    local file = fs.open('./AE2_Interface/server.keys', 'w')
     file.write(textutils.serialize(server.getComputerInfo()))
     file.close()
   else
-    local file = fs.open('server.keys', 'r')
+    local file = fs.open('./AE2_Interface/server.keys', 'r')
     temp = textutils.unserialize(file.readAll())
     file.close()
     if not temp['id'] == initial['computerInfo']['id'] and not temp['label'] == initial['computerInfo']['label'] then
-      local file = fs.open('server.keys', 'w')
+      local file = fs.open('./AE2_Interface/server.keys', 'w')
       file.write(textutils.serialize(server.getComputerInfo()))
       file.close()
     end
