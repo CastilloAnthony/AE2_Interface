@@ -9,4 +9,4 @@ if userInput == 'n' then
 else
   shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/server.lua /AE2_Interface/server.lua')
 end
-shell.run('wget run https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/startup startup')
+shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/startup startup')
