@@ -213,7 +213,7 @@ function remote.checkCraftingQueue()
         local even, side, channel, replyChannel, message, distance
         acknowledged = False
         while not acknowledged do
-            remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}]})
+            remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}})
             event, side, channel, replyChannel, message, distance = os.pullEvent()
             if event == 'modem_message' then
                 local file = fs.open('server.key', 'r')
