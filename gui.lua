@@ -33,7 +33,7 @@ end --end write
 function gui.log(string)
     local logging = {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = string}
     table.insert(gui.logList, logging)
-    local file = fs.open('logs/'..os.date('%F'), 'a')
+    local file = fs.open('./AE2_Interface/logs/'..os.date('%F'), 'a')
     file.write(logging['time']..' '..logging['message']..'\n')
     file.close()
     gui.logCount = gui.logCount + 1
@@ -146,7 +146,7 @@ function gui.readSettings()
     if not fs.exists('settings') then
         gui.writeSettings('default')
     end
-    local file = fs.open('settings', 'r')
+    local file = fs.open('./AE2_Interface/settings.cfg', 'r')
     gui.settings = textutils.unserialize(file.readAll())
     file.close()
 end --end readSettings
@@ -155,7 +155,7 @@ function gui.writeSettings(settings)
     if settings == 'default' then
         gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['craftingQueue'] = {}, ['storedPower'] = 0, ['deltaPower'] = 0, ['snapshotTime'] = 0, ['deltaTime'] = 0}
     end
-    local file = fs.open('settings', 'w')
+    local file = fs.open('./AE2_Interface/settings.cfg', 'w')
     file.write(textutils.serialize(gui.settings))
     file.close()   
 end --end writeSettings
