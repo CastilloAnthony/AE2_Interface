@@ -204,48 +204,23 @@ function remote.getPackets()
     remote.gettingData = false
 end
 
-function remote.checkCraftingQueue()
-    while True do
-        local length = 0
-        gui.readSettings()
-        for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
-        while length > 0 do
-            local item = table.remove(gui.settings['craftingQueue'])
-            local timerID = os.startTimer(0.05)
-            local even, side, channel, replyChannel, message, distance
-            acknowledged = False
-            while not acknowledged do
-                remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}})
-                event, side, channel, replyChannel, message, distance = os.pullEvent()
-                if event == 'modem_message' then
-                    local file = fs.open('./AE2_Interface/server.key', 'r')
-                    local serverKeys = textutils.unserialize(file.readAll())
-                    file.close()
-                    if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
-                        if message['message'] == 'Acknowledged.' then
-                            gui.writeSettings()
-                            acknowledged = True
-                            break
-                        end
-                    end
-                elseif (event == 'timer') and (side == timerID) then
-                    os.sleep(1)
-                    return remote.checkCraftingQueue()
-                end
-            end
-            length = length - 1
-            os.sleep(1)
-        end
-        os.sleep(1)
-    end
-end
-
 function remote.eventHandler()
     --local timerID = os.startTimer(0.5)
     --remote.getPackets()
     --gui.main(remote.data, remote.allData)
     --local event, arg1, arg2, arg3, arg4, arg5
     while true do
+        local item = nil
+        local timestamp = nil
+        local acknowledged = nil
+        gui.readSettings()
+        if #gui.settings['craftingQueue'] > 0 then -- Crafting Queue checking one item at a time
+            item = table.remove(gui.settings['craftingQueue'])
+            gui.writeSettings()
+            timestamp = os.clock()
+            acknowledged = False
+            remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
+        end
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
         if event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
@@ -262,12 +237,28 @@ function remote.eventHandler()
                         --timerID = os.startTimer(16)
                     end
                 end
+            elseif arg2 == 28 then
+                local file = fs.open('./AE2_Interface/server.key', 'r')
+                local serverKeys = textutils.unserialize(file.readAll())
+                file.close()
+                if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
+                    elseif arg4['packet']['type'] == 'craft' then
+                        if message['message'] == 'Acknowledged.' then
+                            if arg4['packet']['timestamp'] == timestamp then
+                                acknowledged = True
+                            end
+                        end
+                    end
+                end
             end
-        --elseif event == 'timer' and arg1 == timerID then
-            --timerID = os.startTimer(0.5)
-            --gui.main(remote.data, remote.allData)
         end
-        -- remote.checkCraftingQueue()
+        if item ~= nil then
+            if not acknowledged then
+                gui.readSettings()
+                table.insert(gui.settings['craftingQueue'], item)
+                gui.writeSettings()
+            end
+        end
     end
 end --end main
 
@@ -275,6 +266,7 @@ function remote.guiTime()
     --remote.getPackets()
     while true do
         gui.updateTime()
+        remote.checkCraftingQueue()
         os.sleep(0.5)
     end
 end
