@@ -205,33 +205,36 @@ function remote.getPackets()
 end
 
 function remote.checkCraftingQueue()
-    local length = 0
-    gui.readSettings()
-    for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
-    while length > 0 do
-        local item = table.remove(gui.settings['craftingQueue'])
-        local timerID = os.startTimer(0.05)
-        local even, side, channel, replyChannel, message, distance
-        acknowledged = False
-        while not acknowledged do
-            remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}})
-            event, side, channel, replyChannel, message, distance = os.pullEvent()
-            if event == 'modem_message' then
-                local file = fs.open('./AE2_Interface/server.key', 'r')
-                local serverKeys = textutils.unserialize(file.readAll())
-                file.close()
-                if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
-                    if message['message'] == 'Acknowledged.' then
-                        gui.writeSettings()
-                        acknowledged = True
-                        break
+    while True do
+        local length = 0
+        gui.readSettings()
+        for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
+        while length > 0 do
+            local item = table.remove(gui.settings['craftingQueue'])
+            local timerID = os.startTimer(0.05)
+            local even, side, channel, replyChannel, message, distance
+            acknowledged = False
+            while not acknowledged do
+                remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}})
+                event, side, channel, replyChannel, message, distance = os.pullEvent()
+                if event == 'modem_message' then
+                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local serverKeys = textutils.unserialize(file.readAll())
+                    file.close()
+                    if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
+                        if message['message'] == 'Acknowledged.' then
+                            gui.writeSettings()
+                            acknowledged = True
+                            break
+                        end
                     end
+                elseif (event == 'timer') and (side == timerID) then
+                    return remote.latestData()
                 end
-            elseif (event == 'timer') and (side == timerID) then
-                return remote.latestData()
             end
+            length = length - 1
         end
-        length = length - 1
+        os.sleep(1)
     end
 end
 
@@ -262,7 +265,7 @@ function remote.eventHandler()
             --timerID = os.startTimer(0.5)
             --gui.main(remote.data, remote.allData)
         end
-        remote.checkCraftingQueue()
+        -- remote.checkCraftingQueue()
     end
 end --end main
 
@@ -321,7 +324,7 @@ function remote.initialize()
     --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
-    parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.mainLoop)
+    parallel.waitForAny(remote.guiTime, remote.eventHandler, remote.checkCraftingQueue)--, remote.mainLoop)
 end --end initialize
 
 return remote
