@@ -143,7 +143,7 @@ function gui.checkIfInTable(table, element)
 end --end checkIfInTable
 
 function gui.readSettings()
-    if not fs.exists('./AE2_Interface/settings') then
+    if not fs.exists('./AE2_Interface/settings.cfg') then
         gui.writeSettings('default')
     end
     local file = fs.open('./AE2_Interface/settings.cfg', 'r')
@@ -221,7 +221,9 @@ function gui.clickedButton(button, x, y, craftables)
                     gui.searching = false
                     gui.log('Usr Inpt: '..gui.userSearch)
                 end
-            elseif gui.settings['currentPage'] == 6 then -- Craftables
+            end
+        elseif 1 < x < gui.width-gui.width*gui.widthFactor and 3 < y < gui.height-2 then
+            if gui.settings['currentPage'] == 6 then -- Craftables
                 if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
                     i = 1
                     for k, v in pairs(craftables) do
