@@ -133,6 +133,17 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
   end
 end --end checkMessages
 
+function server.checkCraftingQueue()
+  gui.readSettings()
+  local length = 0
+  for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
+  while length > 0 do
+      local item = table.remove(gui.settings['craftingQueue'])
+      server.bridge.craft(item)
+      length = length - 1
+  end
+end
+
 function server.initializeMonitor()
   server.monitor.clear()
   server.monitor.setCursorPos(1,1)
@@ -344,7 +355,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.checkCraftingQueue)
 end --end initialize
 
 return server
