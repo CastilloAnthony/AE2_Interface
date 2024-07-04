@@ -361,7 +361,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler,)#server.checkCraftingQueue)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler,) --server.checkCraftingQueue)
 end --end initialize
 
 return server
