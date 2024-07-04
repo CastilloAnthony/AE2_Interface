@@ -222,18 +222,20 @@ function gui.clickedButton(button, x, y, craftables)
                     gui.log('Usr Inpt: '..gui.userSearch)
                 end
             end
-        elseif 1 < x and x < gui.width-gui.width*gui.widthFactor and 3 < y and y < gui.height-2 then
-            if gui.settings['currentPage'] == 6 then -- Craftables
-                if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
-                    i = 1
-                    for k, v in pairs(craftables) do
-                        if i == y-3 then
-                            gui.readSettings()
-                            table.insert(gui.settings['craftingQueue'], craftables[k]['fingerprint'])
-                            gui.writeSettings()
-                            break
+        elseif (x > 1 and x < gui.width-gui.width*gui.widthFactor) then
+            if (y > 3 and y < gui.height-2) then
+                if gui.settings['currentPage'] == 6 then -- Craftables
+                    if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
+                        i = 1
+                        for k, v in pairs(craftables) do
+                            if i == y-3 then
+                                gui.readSettings()
+                                table.insert(gui.settings['craftingQueue'], craftables[k]['fingerprint'])
+                                gui.writeSettings()
+                                break
+                            end
+                            i = i + 1
                         end
-                        i = i + 1
                     end
                 end
             end
