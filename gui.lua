@@ -223,15 +223,15 @@ function gui.clickedButton(button, x, y, craftables)
                 end
             elseif gui.settings['currentPage'] == 6 then -- Craftables
                 if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
-                    i = 0
+                    i = 1
                     for k, v in pairs(craftables) do
-                        i = i + 1
-                        if i == y-4 then
+                        if i == y-3 then
                             gui.readSettings()
-                            table.insert(gui.settings['craftingQueue'], craftable[k]['fingerprint'])
+                            table.insert(gui.settings['craftingQueue'], craftables[k]['fingerprint'])
                             gui.writeSettings()
                             break
                         end
+                        i = i + 1
                     end
                 end
             end
