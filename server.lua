@@ -125,7 +125,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
               server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = False, ['timestamp'] = message['packet']['timestamp']}})
             else
               server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
-              server.craftRequests[message['packet']['timestamp']] = 'packet']['data']
+              server.craftRequests[message['packet']['timestamp']] = message['packet']['data']
               server.write('Crafting request from '..message['verify']['label']..' for item with fingerprint '..message['packet']['data']['fingerprint'])
             end
           else
