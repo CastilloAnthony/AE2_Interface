@@ -20,7 +20,7 @@ function remote.write(text)
 end --end write
 
 function remote.readData()
-    local file = fs.open('data/'..fs.list('data')[1], 'r')
+    local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
     local contents = file.readAll()
     file.close()
     return textutils.unserialize(contents)
@@ -106,7 +106,7 @@ function remote.requestServerKeys()
                 if message['packet']['type'] == 'keys' then
                     if (message['verify']['id'] == message['packet']['data']['id']) and (message['verify']['label'] == message['packet']['data']['label']) then
                         print('Keys recieved')
-                        local file = fs.open('server.key', 'w')
+                        local file = fs.open('./AE2_Interface/server.key', 'w')
                         file.write(textutils.serialize(message['packet']['data']))
                         file.close()
                         remote.write('Keys retrieved from: '..message['verify']['label'])
@@ -137,7 +137,7 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
         end
         if (event == 'modem_message') then
             if (channel == 28) then
-                local file = fs.open('server.key', 'r')
+                local file = fs.open('./AE2_Interface/server.key', 'r')
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
@@ -165,7 +165,7 @@ function remote.requestAllData()
         end
         if (event == 'modem_message') then
             if (channel == 28) then
-                local file = fs.open('server.key', 'r')
+                local file = fs.open('./AE2_Interface/server.key', 'r')
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
@@ -206,6 +206,7 @@ end
 
 function remote.checkCraftingQueue()
     local length = 0
+    gui.readSettings()
     for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
     while length > 0 do
         local item = table.remove(gui.settings['craftingQueue'])
@@ -216,7 +217,7 @@ function remote.checkCraftingQueue()
             remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item}})
             event, side, channel, replyChannel, message, distance = os.pullEvent()
             if event == 'modem_message' then
-                local file = fs.open('server.key', 'r')
+                local file = fs.open('./AE2_Interface/server.key', 'r')
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
@@ -246,7 +247,7 @@ function remote.eventHandler()
             gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         elseif event == 'modem_message' then
             if arg2 == 7 then
-                local file = fs.open('server.key', 'r')
+                local file = fs.open('./AE2_Interface/server.key', 'r')
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
