@@ -62,7 +62,7 @@ function gui.main(data, allData)
         gui.log('No data was given.')
         return
     end
-    --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo
+    --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo, craftables
     gui.readSettings()
     --gui.initialize(gui.monitor)
     if gui.settings['currentPage'] == 1 then
@@ -76,7 +76,7 @@ function gui.main(data, allData)
     elseif gui.settings['currentPage'] == 5 then
         gui.page5(allData)
     elseif gui.settings['currentPage'] == 6 then
-        gui.page6(allData)
+        gui.page6(data['craftables'])
     elseif gui.settings['currentPage'] == 7 then
         gui.page7(data['cells'])
     elseif gui.settings['currentPage'] == 8 then
