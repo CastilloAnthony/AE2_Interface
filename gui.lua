@@ -19,7 +19,7 @@ function gui.initialize(monitor)
     gui.monitor.clear()
     gui.monitor.setCursorPos(1,1)
     gui.width, gui.height =  gui.monitor.getSize()
-    gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0,}
+    gui.readSettings()
 end --end initialize
 
 function gui.write(string)
@@ -369,21 +369,22 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
     gui.readSettings()
-    gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
-    gui.log('Previous Stored Power: '..gui.settings['storedPower'])
+    -- gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
+    -- gui.log('Previous Stored Power: '..gui.settings['storedPower'])
     if gui.settings['storedPower'] == nil then
-        gui.settings['storedPower'] = 0
         gui.settings['deltaPower'] = 0
+        gui.settings['storedPower'] = 0
+        gui.writeSettings()
     elseif energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
+        gui.writeSettings()
     end
     gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/5s')
     --gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
     gui.drawButtons()
-    gui.writeSettings()
 end --end page2
 
 function gui.page3(itemsInfo, allData) -- Items
