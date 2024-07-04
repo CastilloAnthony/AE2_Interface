@@ -10,6 +10,7 @@ local server = {} -- Stores all of the functions for the server
 server.bridge = nil
 server.monitor = nil
 server.modem = nil
+server.craftRequests = {}
 
 function server.write(text)
   if text ~= nil then
@@ -120,8 +121,13 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
             server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
             server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'craft' then
-            server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
-            server.write('Crafting request from '..message['verify']['label']..' for item with fingerprint '..message['packet']['data']['fingerprint'])
+            if server.craftRequests[message['packet']['timestamp']] ~= nil then
+              server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = False, ['timestamp'] = message['packet']['timestamp']}})
+            else
+              server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
+              server.craftRequests[message['packet']['timestamp']] = 'packet']['data']
+              server.write('Crafting request from '..message['verify']['label']..' for item with fingerprint '..message['packet']['data']['fingerprint'])
+            end
           else
            -- server.write('Unknown request.')
           end
