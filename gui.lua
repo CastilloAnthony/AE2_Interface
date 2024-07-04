@@ -153,7 +153,7 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower'] = 0, ['snapshotTime'] = 0, ['deltaTime'] = 0}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['craftingQueue'] = {}, ['storedPower'] = 0, ['deltaPower'] = 0, ['snapshotTime'] = 0, ['deltaTime'] = 0}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -196,7 +196,7 @@ function gui.searchPartialComplete(text)
     return completion.choice(string.lower(text), gui.possible)
 end --end searchPartialComplete
 
-function gui.clickedButton(button, x, y)
+function gui.clickedButton(button, x, y, craftables)
     if button == 1 or peripheral.isPresent(tostring(button)) then
         if y == gui.height-1 then
             if x>=gui.width-6 and x<=gui.width-2 then --Next
@@ -207,7 +207,7 @@ function gui.clickedButton(button, x, y)
                 return true
             end
         elseif y == 3 then
-            if gui.settings['currentPage'] == 5 then
+            if gui.settings['currentPage'] == 5 then -- Searching
                 if x>=2 and x<=gui.width-1 then
                     gui.searching = true
                     gui.monitor.setBackgroundColor(colors.lightGray)
@@ -220,6 +220,19 @@ function gui.clickedButton(button, x, y)
                     gui.userSearch = string.lower(userInput)
                     gui.searching = false
                     gui.log('Usr Inpt: '..gui.userSearch)
+                end
+            elseif gui.settings['currentPage'] == 6 then -- Craftables
+                if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
+                    i = 0
+                    for k, v in pairs(craftables) do
+                        i = i + 1
+                        if i == y-4 then
+                            gui.readSettings()
+                            table.insert(gui.settings['craftingQueue'], craftable[k]['fingerprint'])
+                            gui.writeSettings()
+                            break
+                        end
+                    end
                 end
             end
         end
@@ -548,25 +561,46 @@ function gui.page5(allData) -- Search
     gui.monitor.setCursorPos(2, 3)
 end --end page5
 
-function gui.page6(allData) -- Watch List
+-- function gui.page6(allData) -- Watch List
+--     gui.clearScreen()
+--     gui.monitor.setTextColor(colors.yellow)
+--     gui.monitor.setCursorPos(2, 3)
+--     gui.monitor.write('At a Glance:')
+--     for i=4, gui.height-3 do
+--         local selection = math.random(1,#allData)
+--         gui.monitor.setTextColor(colors.lime)
+--         gui.monitor.setCursorPos(2,i)
+--         if #allData == 0 then
+--             gui.log('Error in large packet, size is 0.')
+--         end
+--         if type(allData[selection]) == 'table' then
+--             gui.monitor.write(gui.resizeString(allData[selection]['displayName']))
+--             gui.monitor.setTextColor(colors.brown)
+--             gui.monitor.setCursorPos(gui.width*gui.widthFactor,i)
+--             gui.monitor.write(''..allData[selection]['amount'])
+--         else
+--             gui.monitor.write(allData)
+--         end
+--     end
+
+--     gui.drawButtons()
+-- end --end page6
+
+function gui.page6(craftables) -- Craftable Items
     gui.clearScreen()
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.setCursorPos(2, 3)
-    gui.monitor.write('At a Glance:')
+    gui.monitor.write('Craftables:')
     for i=4, gui.height-3 do
-        local selection = math.random(1,#allData)
         gui.monitor.setTextColor(colors.lime)
         gui.monitor.setCursorPos(2,i)
-        if #allData == 0 then
-            gui.log('Error in large packet, size is 0.')
-        end
-        if type(allData[selection]) == 'table' then
-            gui.monitor.write(gui.resizeString(allData[selection]['displayName']))
+        if type(craftable[i-4]) == 'table' then
+            gui.monitor.write(gui.resizeString(craftable[i-4]['displayName']))
             gui.monitor.setTextColor(colors.brown)
             gui.monitor.setCursorPos(gui.width*gui.widthFactor,i)
-            gui.monitor.write(''..allData[selection]['amount'])
+            gui.monitor.write(''..craftable[i-4]['amount'])
         else
-            gui.monitor.write(allData)
+            gui.monitor.write(craftables)
         end
     end
 
