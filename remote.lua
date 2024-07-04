@@ -261,6 +261,7 @@ function remote.eventHandler()
             --timerID = os.startTimer(0.5)
             --gui.main(remote.data, remote.allData)
         end
+        remote.checkCraftingQueue()
     end
 end --end main
 
@@ -319,7 +320,7 @@ function remote.initialize()
     --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
-    parallel.waitForAny(remote.guiTime, remote.eventHandler, remote.checkCraftingQueue)--, remote.mainLoop)
+    parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.mainLoop)
 end --end initialize
 
 return remote
