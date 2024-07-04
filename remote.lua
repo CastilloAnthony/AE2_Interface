@@ -326,7 +326,7 @@ function remote.initialize()
     --gui.initialize(term)
     remote.getPackets()
     gui.main(remote.data, remote.allData)
-    parallel.waitForAny(remote.guiTime, remote.eventHandler, remote.checkCraftingQueue)--, remote.mainLoop)
+    parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.checkCraftingQueue)--, remote.mainLoop)
 end --end initialize
 
 return remote
