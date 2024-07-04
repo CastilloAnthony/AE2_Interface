@@ -242,7 +242,7 @@ function remote.eventHandler()
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
-                    elseif arg4['packet']['type'] == 'craft' then
+                    if arg4['packet']['type'] == 'craft' then
                         if message['message'] == 'Acknowledged.' then
                             if arg4['packet']['timestamp'] == timestamp then
                                 acknowledged = True
@@ -266,7 +266,6 @@ function remote.guiTime()
     --remote.getPackets()
     while true do
         gui.updateTime()
-        remote.checkCraftingQueue()
         os.sleep(0.5)
     end
 end
