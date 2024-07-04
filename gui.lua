@@ -9,7 +9,7 @@ gui.monitor = nil
 gui.logList = {}
 gui.logCount = 0
 gui.userSearch = ''
-gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
+gui.settings = nil
 gui.userSearchTable = {}
 gui.searching = false
 gui.possible = {}
@@ -19,6 +19,7 @@ function gui.initialize(monitor)
     gui.monitor.clear()
     gui.monitor.setCursorPos(1,1)
     gui.width, gui.height =  gui.monitor.getSize()
+    gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
 end --end initialize
 
 function gui.write(string)
@@ -368,8 +369,7 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
     gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
-    --gui.log('Previous Stored Power: '..gui.settings['storedPower'])
-    gui.log('Gui Settings: ': '..gui.settings=)
+    gui.log('Previous Stored Power: '..gui.settings['storedPower'])
     if energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
