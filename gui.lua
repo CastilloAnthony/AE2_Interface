@@ -378,9 +378,10 @@ function gui.page2(energyInfo, timeInfo) -- Energy
     elseif energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
+        gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/'..math.floor((timeInfo['clock']-gui.settings['snapshotTime']))..'s')
+        gui.settings['snapshotTime'] = timeInfo['clock']
         gui.writeSettings()
     end
-    gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/'..math.floor((timeInfo['clock']-gui.settings['snapshotTime']))..'s')
     --gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
