@@ -16,7 +16,7 @@ if userInput == 'n' then
   shell.run('rm ./AE2_Interface/remote.lua')
   shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/remote.lua ./AE2_Interface/remote.lua')
 else
-  shell.run('rm ./AE2_Interface/server.lua'')
+  shell.run('rm ./AE2_Interface/server.lua')
   shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/server.lua ./AE2_Interface/server.lua')
 end
 shell.run('rm /startup')
