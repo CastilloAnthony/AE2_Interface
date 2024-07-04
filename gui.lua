@@ -368,7 +368,8 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
     gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
-    gui.log('Previous Stored Power: '..gui.settings['storedPower'])
+    --gui.log('Previous Stored Power: '..gui.settings['storedPower'])
+    gui.log('Gui Settings: ': '..gui.settings=)
     if energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
@@ -378,7 +379,6 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
     gui.drawButtons()
-    gui.settings['recentPower'] = energyInfo['currentStorage']
 end --end page2
 
 function gui.page3(itemsInfo, allData) -- Items
