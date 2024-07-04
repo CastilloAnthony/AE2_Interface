@@ -1,7 +1,7 @@
-if fs.exists('remote.lua') then
+if fs.exists('/AE2_Interface/remote.lua') then
     local remote = require('remote')
     remote.initialize()
-elseif fs.exists('server.lua') then
+elseif fs.exists('/AE2_Interface/server.lua') then
     local server = require('server')
     server.initialize()
 else
