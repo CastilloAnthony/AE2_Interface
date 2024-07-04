@@ -68,7 +68,7 @@ function gui.main(data, allData)
     if gui.settings['currentPage'] == 1 then
         gui.page1(data['computer'], data['time'], data['items'], data['energy'], data['fluids'])
     elseif gui.settings['currentPage'] == 2 then
-        gui.page2(data['energy'], data['timeInfo'])
+        gui.page2(data['energy'], data['time'])
     elseif gui.settings['currentPage'] == 3 then
         gui.page3(data['items'], allData)
     elseif gui.settings['currentPage'] == 4 then
@@ -378,7 +378,7 @@ function gui.page2(energyInfo, timeInfo) -- Energy
     elseif energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
         gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
         gui.settings['storedPower'] = energyInfo['currentStorage']
-        gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/'..math.floor((timeInfo['clock']-gui.settings['snapshotTime']))..'s')
+        gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/'..(math.floor((timeInfo['clock']-gui.settings['snapshotTime'])*10)/10)..'s')
         gui.settings['snapshotTime'] = timeInfo['clock']
         gui.writeSettings()
     end
