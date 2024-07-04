@@ -229,7 +229,8 @@ function remote.checkCraftingQueue()
                         end
                     end
                 elseif (event == 'timer') and (side == timerID) then
-                    return remote.latestData()
+                    os.sleep(1)
+                    return remote.checkCraftingQueue()
                 end
             end
             length = length - 1
