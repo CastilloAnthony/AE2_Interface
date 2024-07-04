@@ -368,8 +368,9 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.write('Delta Power: ')
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
-    --gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
-    --gui.log('Previous Stored Power: '..gui.settings['storedPower'])
+    gui.readSettings()
+    gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
+    gui.log('Previous Stored Power: '..gui.settings['storedPower'])
     if gui.settings['storedPower'] == nil then
         gui.settings['storedPower'] = 0
         gui.settings['deltaPower'] = 0
@@ -382,6 +383,7 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
     gui.drawButtons()
+    gui.writeSettings()
 end --end page2
 
 function gui.page3(itemsInfo, allData) -- Items
