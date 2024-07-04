@@ -68,7 +68,7 @@ function gui.main(data, allData)
     if gui.settings['currentPage'] == 1 then
         gui.page1(data['computer'], data['time'], data['items'], data['energy'], data['fluids'])
     elseif gui.settings['currentPage'] == 2 then
-        gui.page2(data['energy'])
+        gui.page2(data['energy'], data['timeInfo'])
     elseif gui.settings['currentPage'] == 3 then
         gui.page3(data['items'], allData)
     elseif gui.settings['currentPage'] == 4 then
@@ -153,7 +153,7 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0,}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower'] = 0, ['snapshotTime'] = 0,}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -283,7 +283,7 @@ function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo) -- Ma
     gui.monitor.write('Snapshot Report: ')
     gui.monitor.setCursorPos(2,4)
     gui.monitor.setTextColor(colors.white)
-    gui.monitor.write(timeInfo)
+    gui.monitor.write(timeInfo['date'])
     gui.monitor.setCursorPos(2,6)
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.write('Server Info:')
@@ -331,7 +331,7 @@ function gui.page1(serverInfo, timeInfo, itemsInfo, energyInfo, fluidInfo) -- Ma
     gui.drawButtons()
 end --end page1
 
-function gui.page2(energyInfo) -- Energy
+function gui.page2(energyInfo, timeInfo) -- Energy
     gui.clearScreen()
     gui.monitor.setCursorPos(2, 3)
     gui.monitor.setTextColor(colors.purple)
@@ -380,7 +380,7 @@ function gui.page2(energyInfo) -- Energy
         gui.settings['storedPower'] = energyInfo['currentStorage']
         gui.writeSettings()
     end
-    gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/5s')
+    gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/'..math.floor((timeInfo['clock']-gui.settings['snapshotTime']))..'s')
     --gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
