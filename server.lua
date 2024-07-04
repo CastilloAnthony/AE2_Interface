@@ -134,13 +134,17 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
 end --end checkMessages
 
 function server.checkCraftingQueue()
-  gui.readSettings()
-  local length = 0
-  for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
-  while length > 0 do
-      local item = table.remove(gui.settings['craftingQueue'])
-      server.bridge.craft(item)
-      length = length - 1
+  while True do
+    gui.readSettings()
+    local length = 0
+    for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
+    while length > 0 do
+        local item = table.remove(gui.settings['craftingQueue'])
+        server.bridge.craft(item)
+        length = length - 1
+    end
+    gui.writeSettings()
+    os.sleep(1)
   end
 end --end checkCraftingqueue
 
@@ -299,7 +303,7 @@ function server.main() -- Run in Parallel
   while true do
     local data = server.gatherData()
     gui.main(data, server.getAllItemsInfo())
-    server.checkCraftingQueue()
+    -- server.checkCraftingQueue()
     os.sleep(0)
   end
 end --end main
@@ -356,7 +360,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.checkCraftingQueue)
 end --end initialize
 
 return server
