@@ -152,7 +152,7 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['recentPower'] = 0, ['recentDeltaPower']=0}
+        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['preferredItems'] = {}, ['storedPower'] = 0, ['deltaPower']=0}
     end
     local file = fs.open('settings', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -367,11 +367,13 @@ function gui.page2(energyInfo) -- Energy
     gui.monitor.write('Delta Power: ')
     gui.monitor.setTextColor(colors.magenta)
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,9)
-    if energyInfo['currentStorage'] ~= gui.settings['recentPower'] then
-        gui.settings['recentDeltaPower'] = math.floor((gui.settings['recentPower']-energyInfo['currentStorage'])*10)/10
-        gui.settings['recentPower'] = energyInfo['currentStorage']
+    gui.log('Current Energy Storage: '..energyInfo['currentStorage'])
+    gui.log('Previous Stored Power: '..gui.settings['storedPower'])
+    if energyInfo['currentStorage'] ~= gui.settings['storedPower'] then
+        gui.settings['deltaPower'] = math.floor((energyInfo['currentStorage']-gui.settings['storedPower'])*10)/10
+        gui.settings['storedPower'] = energyInfo['currentStorage']
     end
-    gui.monitor.write(''..gui.settings['recentDeltaPower']..' '..'AE/5s')
+    gui.monitor.write(''..gui.settings['deltaPower']..' '..'AE/5s')
     --gui.monitor.write(math.floor(energyInfo['currentStorage']-gui.settings['recentPower'])..' '..'TBD')
     gui.monitor.setTextColor(colors.purple)
     gui.monitor.setCursorPos(2,10)
