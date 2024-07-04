@@ -594,16 +594,15 @@ function gui.page6(craftables) -- Craftable Items
     for i=4, gui.height-3 do
         gui.monitor.setTextColor(colors.lime)
         gui.monitor.setCursorPos(2,i)
-        if type(craftable[i-4]) == 'table' then
-            gui.monitor.write(gui.resizeString(craftable[i-4]['displayName']))
+        if type(craftables[i-4]) == 'table' then
+            gui.monitor.write(gui.resizeString(craftables[i-4]['displayName']))
             gui.monitor.setTextColor(colors.brown)
             gui.monitor.setCursorPos(gui.width*gui.widthFactor,i)
-            gui.monitor.write(''..craftable[i-4]['amount'])
+            gui.monitor.write(''..craftables[i-4]['amount'])
         else
             gui.monitor.write(craftables)
         end
     end
-
     gui.drawButtons()
 end --end page6
 
