@@ -139,9 +139,10 @@ function server.checkCraftingQueue()
     local length = 0
     for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
     while length > 0 do
-        local item = table.remove(gui.settings['craftingQueue'])
-        server.bridge.craft(item)
-        length = length - 1
+      local item = table.remove(gui.settings['craftingQueue'])
+      server.bridge.craft(item)
+      length = length - 1
+      os.sleep(1)
     end
     gui.writeSettings()
     os.sleep(1)
