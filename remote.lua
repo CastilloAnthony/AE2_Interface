@@ -243,7 +243,7 @@ function remote.eventHandler()
                 file.close()
                 if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
                     if arg4['packet']['type'] == 'craft' then
-                        if message['message'] == 'Acknowledged.' then
+                        if arg4['message'] == 'Acknowledged.' then
                             if arg4['packet']['timestamp'] == timestamp then
                                 acknowledged = True
                             end
