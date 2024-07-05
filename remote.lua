@@ -215,17 +215,17 @@ function remote.eventHandler()
     --gui.main(remote.data, remote.allData)
     --local event, arg1, arg2, arg3, arg4, arg5
     while true do
-        local acknowledged = nil
+        -- local acknowledged = nil
         gui.readSettings()
         if #gui.settings['craftingQueue'] > 0 then -- Crafting Queue checking one item at a time
             local item = table.remove(gui.settings['craftingQueue'])
             gui.writeSettings()
             local timestamp = os.clock()
             remote.craftRequests[timestamp] = item
-            acknowledged = False
+            -- acknowledged = False
             remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
         elseif #remote.craftRequests > 0 then
-            acknowledged = False
+            -- acknowledged = False
             for k, v in pairs(remote.craftRequests) do
                 remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = v, ['timestamp'] = k}})
             end
@@ -254,7 +254,8 @@ function remote.eventHandler()
                     if arg4['packet']['type'] == 'craft' then
                         if arg4['message'] == 'Acknowledged.' then
                             if remote.craftRequests[arg4['packet']['timestamp']] ~= nil then
-                                acknowledged = True
+                                -- acknowledged = True
+                                gui.log('Sent crafting request for one '..remote.craftRequests[arg4['packet']['timestamp']]['displayName'])
                                 table.remove(remote.craftRequests, arg4['packet']['timestamp'])
                             end
                         end
