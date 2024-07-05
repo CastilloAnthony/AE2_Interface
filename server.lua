@@ -293,7 +293,7 @@ function server.generateSnapshots() -- Run in Parallel
   end
 end --end generateSnapshots
 
-function server.eventHandler() -- Run in Parallel
+function server.eventHandler('modem_message') -- Run in Parallel
   while true do
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'modem_message' then
@@ -306,7 +306,7 @@ function server.eventHandler() -- Run in Parallel
   end
 end --end eventHandler
 
-function server.buttonHandler() -- Run in Parallel
+function server.buttonHandler(['mouse_up', 'monitor_touch']) -- Run in Parallel
   while true do
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'mouse_up' or event == 'monitor_touch' then
