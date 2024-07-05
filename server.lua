@@ -314,6 +314,11 @@ function server.buttonHandler() -- Run in Parallel
     else
       os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
     end
+  end
+end --end buttonHandler
+
+function server.touchscreenHandler() -- Run in Parallel
+  while true do
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent('monitor_touch')
     if event == 'mouse_up' or event == 'monitor_touch' then
       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
@@ -321,7 +326,7 @@ function server.buttonHandler() -- Run in Parallel
       os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
     end
   end
-end --end buttonHandler
+end --end touchscreenHandler
 
 function server.main() -- Run in Parallel
   while true do
@@ -384,7 +389,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.buttonHandler) --server.checkCraftingQueue)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.buttonHandler, server.touchscreenHandler) --server.checkCraftingQueue)
 end --end initialize
 
 return server
