@@ -313,6 +313,7 @@ function server.buttonHandler() -- Run in Parallel
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'mouse_up' or event == 'monitor_touch' then
       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+      gui.main(server.gatherData(), server.getAllItemsInfo())
     -- else
       -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
     end
@@ -335,7 +336,7 @@ function server.main() -- Run in Parallel
     local data = server.gatherData()
     gui.main(data, server.getAllItemsInfo())
     -- server.checkCraftingQueue()
-    -- os.sleep(0)
+    os.sleep(0)
   end
 end --end main
 
