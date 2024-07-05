@@ -142,10 +142,13 @@ end --end checkMessages
 function server.checkCraftingQueue()
   gui.readSettings()
   if #gui.settings['craftingQueue'] > 0 then
-    for k, v in pairs(gui.settings['craftingQueue]) do
+    for k, v in pairs(gui.settings['craftingQueue']) do
       local item = table.remove(gui.settings['craftingQueue'])
       gui.writeSettings()
-      server.bridge.craftItem(item)
+      if item ~= nil then
+        server.bridge.craftItem(item)
+        server.log('Crafting one '..item['displayName'])
+      end
     end
   end
 end --end checkCraftingqueue
