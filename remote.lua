@@ -8,6 +8,7 @@ remote.modem = nil
 remote.data = nil
 remote.allData = nil
 remote.gettingData = false
+remote.craftRequest = {}
 
 function remote.write(text)
     if text ~= nil then
@@ -210,14 +211,13 @@ function remote.eventHandler()
     --gui.main(remote.data, remote.allData)
     --local event, arg1, arg2, arg3, arg4, arg5
     while true do
-        local item = nil
-        local timestamp = nil
         local acknowledged = nil
         gui.readSettings()
         if #gui.settings['craftingQueue'] > 0 then -- Crafting Queue checking one item at a time
             item = table.remove(gui.settings['craftingQueue'])
             gui.writeSettings()
             timestamp = os.clock()
+            remote.craftRequest[timestamp] = item
             acknowledged = False
             remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
         end
@@ -244,21 +244,22 @@ function remote.eventHandler()
                 if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
                     if arg4['packet']['type'] == 'craft' then
                         if arg4['message'] == 'Acknowledged.' then
-                            if arg4['packet']['timestamp'] == timestamp then
+                            if remote.craftRequest[arg4['packet']['timestamp']] ~= nil then
                                 acknowledged = True
+                                table.remote(remote.craftRequest, arg4['packet']['timestamp'])
                             end
                         end
                     end
                 end
             end
         end
-        if item ~= nil then
-            if not acknowledged then
-                gui.readSettings()
-                table.insert(gui.settings['craftingQueue'], item)
-                gui.writeSettings()
-            end
-        end
+        -- if acknowledged ~= nil then
+        --     if not acknowledged then
+        --         gui.readSettings()
+        --         table.insert(gui.settings['craftingQueue'], item)
+        --         gui.writeSettings()
+        --     end
+        -- end
     end
 end --end main
 
