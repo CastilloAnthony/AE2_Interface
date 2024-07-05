@@ -282,14 +282,17 @@ function server.generateSnapshots() -- Run in Parallel
   while true do
     if math.floor(os.epoch('local')/1000) % 5 == 0 then
       local data = server.gatherData() --{['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+      os.sleep(0)
       local filename = './AE2_Interface/data/'..tostring(math.floor(os.epoch()/1000))
       local file = fs.open(filename, 'w')
       file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
       file.close()
       server.write('Saved snapshot to: '..filename)
-      server.broadcastDataAvailable()
+      os.sleep(0)
       server.deleteSnapshots()
       server.checkCraftingQueue()
+      os.sleep(0)
+      server.broadcastDataAvailable()
       os.sleep(3)
     end
     os.sleep(0)
