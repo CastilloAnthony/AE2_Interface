@@ -126,7 +126,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
             else
               server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
               server.craftRequests[message['packet']['timestamp']] = message['packet']['data']
-              server.write('Crafting request from '..message['verify']['label']..' for item with fingerprint '..message['packet']['data']['fingerprint'])
+              server.write('Crafting request from '..message['verify']['label']..' for '..message['packet']['data']['displayName'])
             end
           else
            -- server.write('Unknown request.')
@@ -140,18 +140,13 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
 end --end checkMessages
 
 function server.checkCraftingQueue()
-  while True do
-    gui.readSettings()
-    local length = 0
-    for _, _ in pairs(gui.settings['craftingQueue']) do length = length + 1 end
-    while length > 0 do
+  gui.readSettings()
+  if #gui.settings['craftingQueue'] > 0 then
+    for k, v in pairs(gui.settings['craftingQueue]) do
       local item = table.remove(gui.settings['craftingQueue'])
-      server.bridge.craft(item)
-      length = length - 1
-      os.sleep(1)
+      gui.writeSettings()
+      server.bridge.craftItem(item)
     end
-    gui.writeSettings()
-    os.sleep(1)
   end
 end --end checkCraftingqueue
 
@@ -310,7 +305,7 @@ function server.main() -- Run in Parallel
   while true do
     local data = server.gatherData()
     gui.main(data, server.getAllItemsInfo())
-    -- server.checkCraftingQueue()
+    server.checkCraftingQueue()
     os.sleep(0)
   end
 end --end main
