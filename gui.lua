@@ -197,17 +197,20 @@ function gui.searchPartialComplete(text)
 end --end searchPartialComplete
 
 function gui.clickedButton(button, x, y, craftables)
+    gui.readSettings()
     if button == 1 or peripheral.isPresent(tostring(button)) then
-        if y == gui.height-1 then
+        if y == gui.height-1 then -- Previous/Next Buttons
             if x>=gui.width-6 and x<=gui.width-2 then --Next
                 gui.nextPage(true)
+                gui.writeSettings()
                 return true
             elseif x>=2 and x<=6 then --Prev
                 gui.nextPage(false)
+                gui.writeSettings()
                 return true
             end
-        elseif y == 3 then
-            if gui.settings['currentPage'] == 5 then -- Searching
+        elseif gui.settings['currentPage'] == 5 then -- Searching
+            if y == 3 then
                 if x>=2 and x<=gui.width-1 then
                     gui.searching = true
                     gui.monitor.setBackgroundColor(colors.lightGray)
@@ -222,9 +225,9 @@ function gui.clickedButton(button, x, y, craftables)
                     gui.log('Usr Inpt: '..gui.userSearch)
                 end
             end
-        elseif (x > 1 and x < gui.width*gui.widthFactor) then
-            if (y > 3 and y < gui.height-2) then
-                if gui.settings['currentPage'] == 6 then -- Craftables
+        elseif gui.settings['currentPage'] == 6 then -- Craftables
+            if (x > 1 and x < gui.width*gui.widthFactor) then
+                if (y > 3 and y < gui.height-2) then
                     if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
                         i = 1
                         for k, v in pairs(craftables) do
