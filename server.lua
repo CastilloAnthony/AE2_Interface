@@ -315,7 +315,8 @@ function server.buttonHandler() -- Run in Parallel
       os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
     end
   end
-end
+end --end buttonHandler
+
 function server.main() -- Run in Parallel
   while true do
     local data = server.gatherData()
