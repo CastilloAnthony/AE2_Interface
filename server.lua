@@ -293,9 +293,9 @@ function server.generateSnapshots() -- Run in Parallel
   end
 end --end generateSnapshots
 
-function server.eventHandler('modem_message') -- Run in Parallel
+function server.eventHandler() -- Run in Parallel
   while true do
-    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
+    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent('modem_message')
     if event == 'modem_message' then
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
     else
@@ -306,9 +306,9 @@ function server.eventHandler('modem_message') -- Run in Parallel
   end
 end --end eventHandler
 
-function server.buttonHandler(['mouse_up', 'monitor_touch']) -- Run in Parallel
+function server.buttonHandler() -- Run in Parallel
   while true do
-    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
+    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent(['mouse_up', 'monitor_touch'])
     if event == 'mouse_up' or event == 'monitor_touch' then
       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
     else
