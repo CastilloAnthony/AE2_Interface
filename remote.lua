@@ -146,7 +146,7 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
                         return textutils.unserialize(message['packet']['data'])
                     end
                 end
-        --     end
+            end
         -- else
         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
         end
