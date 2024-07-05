@@ -308,7 +308,13 @@ end --end eventHandler
 
 function server.buttonHandler() -- Run in Parallel
   while true do
-    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent(['mouse_up', 'monitor_touch'])
+    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent('mouse_up')
+    if event == 'mouse_up' or event == 'monitor_touch' then
+      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+    else
+      os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
+    end
+    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent('monitor_touch')
     if event == 'mouse_up' or event == 'monitor_touch' then
       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
     else
