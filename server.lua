@@ -337,7 +337,7 @@ function server.main() -- Run in Parallel
     local data = server.gatherData()
     gui.main(data, server.getAllItemsInfo())
     -- server.checkCraftingQueue()
-    os.sleep(0)
+    -- os.sleep(0)
   end
 end --end main
 
