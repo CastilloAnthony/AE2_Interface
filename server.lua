@@ -73,7 +73,7 @@ function server.initializeNetwork()
 end --end initializeNetwork
 
 function server.broadcast()
-  local info = {['message'] = 'This is an automated broadcast sharing the ports and additional information for the AE Server.', ['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}, ['verify'] = server.getComputerInfo()}
+  local info = {['message'] = 'This is an automated broadcast sharing the ports and additional information for the AE Interface Server.', ['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}, ['verify'] = server.getComputerInfo()}
   --server.write('Broadcasted')
   server.modem.transmit(7, 0, info)
 end --end broadcast
@@ -81,6 +81,7 @@ end --end broadcast
 function server.broadcastDataAvailable()
   local info = {['message'] = 'There is a new snapshot available.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'newDataAvailable'}}
   server.modem.transmit(7, 0, info)
+  gui.log('A new snapshot is available.')
 end
 
 function server.checkMessages(event, side, channel, replyChannel, message, distance)
@@ -297,28 +298,29 @@ end --end generateSnapshots
 
 function server.eventHandler() -- Run in Parallel
   while true do
-    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent('modem_message')
+    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'modem_message' then
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
+    elseif event == 'mouse_up' or event == 'monitor_touch' then
+      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+      gui.main(server.gatherData(), server.getAllItemsInfo())
     else
       os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
-    -- elseif event == 'mouse_up' or event == 'monitor_touch' then
-    --   gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
     end
   end
 end --end eventHandler
 
-function server.buttonHandler() -- Run in Parallel
-  while true do
-    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
-    if event == 'mouse_up' or event == 'monitor_touch' then
-      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
-      gui.main(server.gatherData(), server.getAllItemsInfo())
-    -- else
-      -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
-    end
-  end
-end --end buttonHandler
+-- function server.buttonHandler() -- Run in Parallel
+--   while true do
+--     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
+--     if event == 'mouse_up' or event == 'monitor_touch' then
+--       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+--       gui.main(server.gatherData(), server.getAllItemsInfo())
+--     -- else
+--       -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
+--     end
+--   end
+-- end --end buttonHandler
 
 -- function server.touchscreenHandler() -- Run in Parallel
 --   while true do
@@ -392,7 +394,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.buttonHandler) --server.touchscreenHandler, 
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler)-- , server.buttonHandler) --server.touchscreenHandler, 
 end --end initialize
 
 return server
