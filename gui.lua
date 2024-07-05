@@ -539,7 +539,7 @@ function gui.page3(itemsInfo, allData) -- Items
                 break
             end
             gui.monitor.setTextColor(colors.lime)
-            gui.monitor.setCursorPos(2,gui.height-i)--i+10)
+            gui.monitor.setCursorPos(2,i+10)
             gui.monitor.write(gui.resizeString(allData[gui.settings['itemsMouseWheel']+i]['displayName']))
             gui.monitor.setTextColor(colors.brown)
             gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
