@@ -235,7 +235,7 @@ function remote.eventHandler()
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
             gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         else if event == 'mouse_wheel' then
-            gui.mouseWheel(arg1, arg2, arg3, arg4)
+            gui.mouseWheel(event, arg1, arg2, arg3)
             gui.main(remote.data, remote.allData)
         elseif event == 'modem_message' then
             if arg2 == 7 then
