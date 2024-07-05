@@ -234,7 +234,7 @@ function remote.eventHandler()
         if event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
             gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
-        else if event == 'mouse_wheel' then
+        elseif event == 'mouse_wheel' then
             gui.mouseWheel(event, arg1, arg2, arg3)
             gui.main(remote.data, remote.allData)
         elseif event == 'modem_message' then
