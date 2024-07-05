@@ -214,9 +214,9 @@ function remote.eventHandler()
         local acknowledged = nil
         gui.readSettings()
         if #gui.settings['craftingQueue'] > 0 then -- Crafting Queue checking one item at a time
-            item = table.remove(gui.settings['craftingQueue'])
+            local item = table.remove(gui.settings['craftingQueue'])
             gui.writeSettings()
-            timestamp = os.clock()
+            local timestamp = os.clock()
             remote.craftRequest[timestamp] = item
             acknowledged = False
             remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
