@@ -67,7 +67,7 @@ function remote.performHandshake()
     local timerID = os.startTimer(0.05)
     remote.modem.transmit(14, 0, {['handshake'] = true, ['verify'] = remote.getComputerInfo()})
     while true do
-        event, side, channel, replyChannel, message, distance = os.pullEvent()
+        event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
         if event == 'modem_message' then
             break
         elseif (event == 'timer') and (side == timerID) then
@@ -99,7 +99,7 @@ function remote.requestServerKeys()
     local timerID = os.startTimer(0.05)
     remote.modem.transmit(21, 0, {['message'] = 'keys', ['verify'] = remote.getComputerInfo()})
     while true do
-        event, side, channel, replyChannel, message, distance = os.pullEvent()
+        event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
         if (event == 'timer') and (side == timerID) then
             return false
         elseif event == 'modem_message' then
@@ -129,7 +129,7 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
         local event, side, channel, replyChannel, message, distance
         while true do
             remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
-            event, side, channel, replyChannel, message, distance = os.pullEvent()
+            event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
             if event == 'modem_message' then
                 break
             elseif (event == 'timer') and (side == timerID) then
@@ -146,7 +146,9 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
                         return textutils.unserialize(message['packet']['data'])
                     end
                 end
-            end
+        --     end
+        -- else
+        --     os.queueEvent(event, side, channel, replyChannel, message, distance)
         end
     end
 end --end retrieveData
@@ -157,7 +159,7 @@ function remote.requestAllData()
         local even, side, channel, replyChannel, message, distance
         while true do
             remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
-            event, side, channel, replyChannel, message, distance = os.pullEvent()
+            event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
             if event == 'modem_message' then
                 break
             elseif (event == 'timer') and (side == timerID) then
@@ -175,6 +177,8 @@ function remote.requestAllData()
                     end
                 end
             end
+        -- else
+        --     os.queueEvent(event, side, channel, replyChannel, message, distance)
         end
     end
 end --end requestAllData
@@ -257,6 +261,8 @@ function remote.eventHandler()
                     end
                 end
             end
+        else
+            os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
         end
         -- if acknowledged ~= nil then
         --     if not acknowledged then
