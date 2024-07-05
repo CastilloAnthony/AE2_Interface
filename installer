@@ -16,3 +16,4 @@ end
 shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/startup /startup')
 if fs.exists('installer') then
   shell.run('rm installer')
+end
