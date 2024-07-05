@@ -521,7 +521,7 @@ function gui.page3(itemsInfo, allData) -- Items
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
     gui.monitor.write('Quantity')
     table.sort(allData, gui.compareByAmount)
-    if gui.settings['itemsMousewheel']+gui.height-13 > #allData then -- Looking at the bottom of the list
+    if gui.settings['itemsMouseWheel']+gui.height-13 > #allData then -- Looking at the bottom of the list
         for i=1, gui.height-13 do
             if i > #allData then
                 break
@@ -535,12 +535,12 @@ function gui.page3(itemsInfo, allData) -- Items
         end
     else
         for i=1, gui.height-13 do
-            if gui.settings['itemsMousewheel']+i > #allData then
+            if gui.settings['itemsMouseWheel']+i > #allData then
                 break
             end
             gui.monitor.setTextColor(colors.lime)
             gui.monitor.setCursorPos(2,gui.height-i)--i+10)
-            gui.monitor.write(gui.resizeString(allData[gui.settings['itemsMousewheel']+i]['displayName']))
+            gui.monitor.write(gui.resizeString(allData[gui.settings['itemsMouseWheel']+i]['displayName']))
             gui.monitor.setTextColor(colors.brown)
             gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
             gui.monitor.write(''..allData[i]['amount'])
