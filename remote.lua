@@ -8,7 +8,7 @@ remote.modem = nil
 remote.data = nil
 remote.allData = nil
 remote.gettingData = false
-remote.craftRequest = {}
+remote.craftRequests = {}
 
 function remote.write(text)
     if text ~= nil then
