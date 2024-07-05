@@ -220,6 +220,11 @@ function remote.eventHandler()
             remote.craftRequest[timestamp] = item
             acknowledged = False
             remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
+        elseif #remote.craftRequests > 0 then
+            acknowledged = False
+            for k, v in pairs(remote.craftRequests) do
+                remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = v, ['timestamp'] = k}})
+            end
         end
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
         if event == 'mouse_up' or event == 'monitor_touch' then
