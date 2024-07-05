@@ -282,16 +282,16 @@ function server.generateSnapshots() -- Run in Parallel
   while true do
     if math.floor(os.epoch('local')/1000) % 5 == 0 then
       local data = server.gatherData() --{['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
-      os.sleep(0)
+      coroutine.yield()
       local filename = './AE2_Interface/data/'..tostring(math.floor(os.epoch()/1000))
       local file = fs.open(filename, 'w')
       file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
       file.close()
       server.write('Saved snapshot to: '..filename)
-      os.sleep(0)
+      coroutine.yield()
       server.deleteSnapshots()
       server.checkCraftingQueue()
-      os.sleep(0)
+      coroutine.yield()
       server.broadcastDataAvailable()
       os.sleep(3)
     end
@@ -306,9 +306,8 @@ function server.eventHandler() -- Run in Parallel
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
     elseif event == 'mouse_up' or event == 'monitor_touch' then
       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
-      gui.main(server.gatherData(), server.getAllItemsInfo())
-    else
-      os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
+    -- else
+    --   os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
     end
   end
 end --end eventHandler
