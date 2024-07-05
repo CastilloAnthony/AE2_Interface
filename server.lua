@@ -298,12 +298,24 @@ function server.eventHandler() -- Run in Parallel
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'modem_message' then
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
-    elseif event == 'mouse_up' or event == 'monitor_touch' then
-      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+    else
+      os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
+    -- elseif event == 'mouse_up' or event == 'monitor_touch' then
+    --   gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
     end
   end
 end --end eventHandler
 
+function server.buttonHandler() -- Run in Parallel
+  while true do
+    local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
+    if event == 'mouse_up' or event == 'monitor_touch' then
+      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+    else
+      os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
+    end
+  end
+end
 function server.main() -- Run in Parallel
   while true do
     local data = server.gatherData()
@@ -365,7 +377,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler) --server.checkCraftingQueue)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.buttonHandler) --server.checkCraftingQueue)
 end --end initialize
 
 return server
