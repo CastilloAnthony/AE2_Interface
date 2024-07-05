@@ -147,7 +147,7 @@ function server.checkCraftingQueue()
       gui.writeSettings()
       if item ~= nil then
         server.bridge.craftItem(item)
-        server.log('Crafting one '..item['displayName'])
+        gui.log('Crafting one '..item['displayName'])
       end
     end
   end
