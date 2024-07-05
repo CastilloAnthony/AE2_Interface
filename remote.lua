@@ -217,7 +217,7 @@ function remote.eventHandler()
             local item = table.remove(gui.settings['craftingQueue'])
             gui.writeSettings()
             local timestamp = os.clock()
-            remote.craftRequest[timestamp] = item
+            remote.craftRequests[timestamp] = item
             acknowledged = False
             remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
         elseif #remote.craftRequests > 0 then
@@ -249,9 +249,9 @@ function remote.eventHandler()
                 if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
                     if arg4['packet']['type'] == 'craft' then
                         if arg4['message'] == 'Acknowledged.' then
-                            if remote.craftRequest[arg4['packet']['timestamp']] ~= nil then
+                            if remote.craftRequests[arg4['packet']['timestamp']] ~= nil then
                                 acknowledged = True
-                                table.remove(remote.craftRequest, arg4['packet']['timestamp'])
+                                table.remove(remote.craftRequests, arg4['packet']['timestamp'])
                             end
                         end
                     end
