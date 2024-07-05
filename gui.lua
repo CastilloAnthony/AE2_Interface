@@ -153,7 +153,20 @@ end --end readSettings
 
 function gui.writeSettings(settings)
     if settings == 'default' then
-        gui.settings = {['currentPage'] = 1, ['userSearch'] = gui.userSearch, ['searchHistory'] = {}, ['craftingQueue'] = {}, ['storedPower'] = 0, ['deltaPower'] = 0, ['snapshotTime'] = 0, ['deltaTime'] = 0}
+        gui.settings = {
+            ['currentPage'] = 1, 
+            ['userSearch'] = gui.userSearch, 
+            ['searchHistory'] = {}, 
+            ['craftingQueue'] = {}, 
+            ['storedPower'] = 0, 
+            ['deltaPower'] = 0, 
+            ['snapshotTime'] = 0, 
+            ['deltaTime'] = 0,
+            ['itemsMouseWheel'] = 0,
+            ['searchingMouseWheel'] = 0,
+            ['craftablesMouseWheel'] = 0,
+            ['logsMouseWheel'] = 0,
+        }
     end
     local file = fs.open('./AE2_Interface/settings.cfg', 'w')
     file.write(textutils.serialize(gui.settings))
@@ -227,7 +240,7 @@ function gui.clickedButton(button, x, y, craftables)
             end
         elseif gui.settings['currentPage'] == 6 then -- Craftables
             if (x > 1 and x < gui.width*gui.widthFactor) then
-                if (y > 3 and y < gui.height-2) then
+                if (y > 3 and y < gui.height-3) then
                     if x>=2 and x<=gui.width*gui.widthFactor then -- Clicked the name of an item
                         i = 1
                         for k, v in pairs(craftables) do
@@ -246,6 +259,54 @@ function gui.clickedButton(button, x, y, craftables)
     end
     return false
 end --end clickedButton
+
+function gui.mouseWheel(button, dir, x, y)
+    gui.readSettings()
+    if button == 'mouse_wheel' then
+        if gui.settings['currentPage'] == 3 then -- Items
+            if (y > 10 and y < gui.height-3) then
+                if dir == -1 then
+                    if gui.settings['itemsMouseWheel'] > 0 then
+                        gui.settings['itemsMouseWheel'] = gui.settings['itemsMouseWheel']-1
+                    end
+                else
+                    gui.settings['itemsMouseWheel'] = gui.settings['itemsMouseWheel']+1
+                end
+            end
+        elseif gui.settings['currentPage'] == 5 then -- Searching
+            if (y > 4 and y < gui.height-3) then
+                if dir == -1 then
+                    if gui.settings['searchingMouseWheel'] > 0 then
+                        gui.settings['searchingMouseWheel'] = gui.settings['searchingMouseWheel']-1
+                    end
+                else
+                    gui.settings['searchingMouseWheel'] = gui.settings['searchingMouseWheel']+1
+                end
+            end
+        elseif gui.settings['currentPage'] == 6 then -- Craftables
+            if (y > 3 and y < gui.height-3) then
+                if dir == -1 then
+                    if gui.settings['craftableMouseWheel'] > 0 then
+                        gui.settings['craftableMouseWheel'] = gui.settings['craftableMouseWheel']-1
+                    end
+                else
+                    gui.settings['craftableMouseWheel'] = gui.settings['craftableMouseWheel']+1
+                end
+            end
+        elseif gui.settings['currentPage'] == 9 then -- Logs
+            if (y > 2 and y < gui.height-3) then
+                if dir == -1 then
+                    if gui.settings['logsMouseWheel'] > 0 then
+                        gui.settings['logsMouseWheel'] = gui.settings['logsMouseWheel']+1
+                    end
+                else
+                    gui.settings['logsMouseWheel'] = gui.settings['logsMouseWheel']-1
+                end
+            end
+        end
+    end
+    gui.writeSettings()
+end
 
 function gui.resizeString(string, smaller)
     if smaller == nil then
@@ -460,16 +521,30 @@ function gui.page3(itemsInfo, allData) -- Items
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
     gui.monitor.write('Quantity')
     table.sort(allData, gui.compareByAmount)
-    for i=1, gui.height-13 do
-        if i > #allData then
-            break
+    if gui.settings['itemsMousewheel']+gui.height-13 > #allData then -- Looking at the bottom of the list
+        for i=1, gui.height-13 do
+            if i > #allData then
+                break
+            end
+            gui.monitor.setTextColor(colors.lime)
+            gui.monitor.setCursorPos(2,gui.height-i)--i+10)
+            gui.monitor.write(gui.resizeString(allData[#allData-i]['displayName']))
+            gui.monitor.setTextColor(colors.brown)
+            gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
+            gui.monitor.write(''..allData[i]['amount'])
         end
-        gui.monitor.setTextColor(colors.lime)
-        gui.monitor.setCursorPos(2,i+10)
-        gui.monitor.write(gui.resizeString(allData[i]['displayName']))
-        gui.monitor.setTextColor(colors.brown)
-        gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
-        gui.monitor.write(''..allData[i]['amount'])
+    else
+        for i=1, gui.height-13 do
+            if gui.settings['itemsMousewheel']+i > #allData then
+                break
+            end
+            gui.monitor.setTextColor(colors.lime)
+            gui.monitor.setCursorPos(2,gui.height-i)--i+10)
+            gui.monitor.write(gui.resizeString(allData[gui.settings['itemsMousewheel']+i]['displayName']))
+            gui.monitor.setTextColor(colors.brown)
+            gui.monitor.setCursorPos(gui.width*gui.widthFactor,i+10)
+            gui.monitor.write(''..allData[i]['amount'])
+        end
     end
     gui.drawButtons()
 end --end page3
