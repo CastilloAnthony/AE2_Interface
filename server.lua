@@ -126,7 +126,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
             else
               server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
               server.craftRequests[message['packet']['timestamp']] = message['packet']['data']
-              server.write('Crafting request from '..message['verify']['label']..' for '..message['packet']['data']['displayName'])
+              server.write('Crafting request from '..message['verify']['label']..' for one '..message['packet']['data']['displayName'])
             end
           else
            -- server.write('Unknown request.')
@@ -346,7 +346,7 @@ function server.initialize()
     file.write(textutils.serialize({server.getComputerInfo()}))
     file.close()
   end
-  if not fs.exists('./AE2_Interface/server,keys') then
+  if not fs.exists('./AE2_Interface/server.keys') then
     local file = fs.open('./AE2_Interface/server.keys', 'w')
     file.write(textutils.serialize(server.getComputerInfo()))
     file.close()
