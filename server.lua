@@ -140,14 +140,18 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
 end --end checkMessages
 
 function server.checkCraftingQueue()
-  gui.readSettings()
-  if #gui.settings['craftingQueue'] > 0 then
-    for k, v in pairs(gui.settings['craftingQueue']) do
-      local item = table.remove(gui.settings['craftingQueue'])
-      gui.writeSettings()
-      if item ~= nil then
-        server.bridge.craftItem(item)
-        gui.log('Crafting one '..item['displayName'])
+  while true do
+    os.sleep(1)
+    gui.readSettings()
+    if #gui.settings['craftingQueue'] > 0 then
+      for k, v in pairs(gui.settings['craftingQueue']) do
+        local item = table.remove(gui.settings['craftingQueue'])
+        gui.writeSettings()
+        if item ~= nil then
+          server.bridge.craftItem(item)
+          gui.log('Crafting one '..item['displayName'])
+        end
+        os.sleep(0)
       end
     end
   end
@@ -332,7 +336,7 @@ function server.main() -- Run in Parallel
   while true do
     local data = server.gatherData()
     gui.main(data, server.getAllItemsInfo())
-    server.checkCraftingQueue()
+    -- server.checkCraftingQueue()
     os.sleep(0)
   end
 end --end main
@@ -389,7 +393,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.buttonHandler, server.touchscreenHandler) --server.checkCraftingQueue)
+  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler, server.buttonHandler, server.touchscreenHandler, server.checkCraftingQueue) --server.checkCraftingQueue)
 end --end initialize
 
 return server
