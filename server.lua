@@ -10,6 +10,7 @@ local server = {} -- Stores all of the functions for the server
 server.bridge = nil
 server.monitor = nil
 server.modem = nil
+server.snapshot = nil
 server.craftRequests = {}
 
 function server.write(text)
@@ -113,11 +114,11 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
       for _, i in pairs(clients) do
         if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
           if message['message'] == 'latestSnapshot' then
-            server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = server.loadLatestSnapshot()}})
+            server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = textutils.serialize(server.snapshot, {['allow_repetitions'] = true })}})
             server.write('Sent snapshot packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'allData' then
             server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.getAllItemsInfo()}})
-            server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+            -- server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'keys' then
             server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
             server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
@@ -248,54 +249,18 @@ function server.gatherData()
   return data
 end
 
-function server.loadLatestSnapshot()
-  local latest = nil
-  for _, i in pairs(fs.list('./AE2_Interface/data')) do
-    if latest == nil then
-      latest = tonumber(i)
-    elseif tonumber(i) > latest then
-      latest = tonumber(i)
-    end
-  end
-  local file = fs.open('./AE2_Interface/data/'..latest, 'r')
-  local data = file.readAll()
-  file.close()
-  return data
-end --end loadLAtestSnapshot
-
-function server.deleteSnapshots()
-  while #fs.list('./AE2_Interface/data') > 4 do
-    local oldest = nil
-    for _, i in pairs(fs.list('./AE2_Interface/data')) do
-      if oldest == nil then
-        oldest = tonumber(i)
-      elseif tonumber(i) < oldest then
-        oldest = tonumber(i)
-      end
-    end
-    server.write('Deleting snapshot: ./AE2_Interface/data/'..oldest)
-    fs.delete('./AE2_Interface/data/'..oldest)
-  end
-end --end deleteSnapshots
-
 function server.generateSnapshots() -- Run in Parallel
   while true do
     if math.floor(os.epoch('local')/1000) % 5 == 0 then
-      local data = server.gatherData() --{['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo()}
+      server.snapshot = server.gatherData()
       coroutine.yield()
-      local filename = './AE2_Interface/data/'..tostring(math.floor(os.epoch()/1000))
-      local file = fs.open(filename, 'w')
-      file.write(textutils.serialize(data, {['allow_repetitions'] = true }))
-      file.close()
-      server.write('Saved snapshot to: '..filename)
-      coroutine.yield()
-      server.deleteSnapshots()
       server.checkCraftingQueue()
       coroutine.yield()
       server.broadcastDataAvailable()
       os.sleep(3)
     end
     os.sleep(0)
+    coroutine.yield()
   end
 end --end generateSnapshots
 
@@ -314,33 +279,10 @@ function server.eventHandler() -- Run in Parallel
   end
 end --end eventHandler
 
--- function server.buttonHandler() -- Run in Parallel
---   while true do
---     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
---     if event == 'mouse_up' or event == 'monitor_touch' then
---       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
---       gui.main(server.gatherData(), server.getAllItemsInfo())
---     -- else
---       -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
---     end
---   end
--- end --end buttonHandler
-
--- function server.touchscreenHandler() -- Run in Parallel
---   while true do
---     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent('monitor_touch')
---     if event == 'mouse_up' or event == 'monitor_touch' then
---       gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
---     else
---       os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
---     end
---   end
--- end --end touchscreenHandler
-
 function server.main() -- Run in Parallel
   while true do
-    local data = server.gatherData()
-    gui.main(data, server.getAllItemsInfo())
+    -- local data = server.gatherData()
+    gui.main(server.gatherData(), server.getAllItemsInfo())
     -- server.checkCraftingQueue()
     os.sleep(0)
   end
@@ -370,10 +312,6 @@ function server.initialize()
   end
   server.write('Computer ID: '..initial['computerInfo']['id'])
   server.write('Computer Label: '..initial['computerInfo']['label'])
-  if not fs.isDir('./AE2_Interface/data') then
-    fs.makeDir('./AE2_Interface/data')
-  end
-  server.write('Saving data to /data/')
   if not fs.exists('./AE2_Interface/clients') then
     local file = fs.open('./AE2_Interface/clients', 'w')
     file.write(textutils.serialize({server.getComputerInfo()}))

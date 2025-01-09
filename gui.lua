@@ -33,7 +33,26 @@ end --end write
 function gui.log(string)
     local logging = {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = string}
     table.insert(gui.logList, logging)
-    local file = fs.open('./AE2_Interface/logs/'..os.date('%F'), 'a')
+    local storage = ''
+    if fs.isDir('disk') then
+        if fs.getFreeSpace('disk') >= 500 then
+            storage = 'disk'
+        else
+            table.insert(gui.logList, {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = 'disk is full.'})
+        end
+    elseif storage == '' then
+        for i=1, 10 do
+            if fs.isDir('disk'..i) then
+                if fs.getFreeSpace('disk'..i) >= 500 then
+                    storage = 'disk'..i
+                    break
+                else
+                    table.insert(gui.logList, {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = 'disk'..i..' is full.'})
+                end
+            end
+        end
+    end
+    local file = fs.open(storage..'/AE2_Interface/logs/'..os.date('%F'), 'a')
     file.write(logging['time']..' '..logging['message']..'\n')
     file.close()
     gui.logCount = gui.logCount + 1
@@ -50,10 +69,6 @@ function gui.log(string)
             end
         end
         table.remove(gui.logList, oldestIndex)
-    end
-    while #fs.list('./AE2_Interface/logs') > 7 do
-        server.write('Deleting log: ./AE2_Interface/logs/'..fs.list('./AE2_Interface/logs')[1])
-        fs.delete('./AE2_Interface/logs/'..fs.list('./AE2_Interface/logs')[1])
     end
 end --end log
 
