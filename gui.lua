@@ -272,6 +272,14 @@ function gui.clickedButton(button, x, y, craftables)
                     end
                 end
             end
+        elseif y == 1 and x == gui.width then
+            gui.monitor.setBackgroundColor(colors.black)
+            gui.monitor.clear()
+            gui.monitor.setTextColor(colors.red)
+            print('AE2 Interface has been ')
+            gui.monitor.setTextColor(colors.white)
+            os.queueEvent('terminate')
+            os.sleep(100)
         end
     end
     return false
@@ -338,8 +346,11 @@ function gui.updateTime()
     local x, y = gui.monitor.getCursorPos()
     gui.monitor.setVisible(false)
     gui.monitor.setTextColor(colors.white)
+    gui.monitor.setBackgroundColor(colors.red)
+    gui.monitor.setCursorPos(gui.width, 1)
+    gui.monitor.write('X')
     gui.monitor.setBackgroundColor(colors.gray)
-    for i=1, gui.width do
+    for i=1, gui.width-1 do
         gui.monitor.setCursorPos(i,1)
         gui.monitor.write(' ')
     end
