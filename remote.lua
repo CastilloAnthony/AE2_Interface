@@ -42,23 +42,23 @@ function remote.checkForWirelessModem()
 end --end checkForWirelessModem
 
 function remote.checkForMonitor()
-  for _, i in pairs(peripheral.getNames()) do
-    if peripheral.getType(i) == 'monitor' then
-      remote.write('Monitor found!')
-    --   return peripheral.wrap(i)
-      width, height = peripheral.wrap(i).getSize()
-      return window.create(peripheral.wrap(i), 1, 1, width, height)
+    for _, i in pairs(peripheral.getNames()) do
+        if peripheral.getType(i) == 'monitor' then
+            remote.write('Monitor found!')
+            -- return peripheral.wrap(i)
+            width, height = peripheral.wrap(i).getSize()
+            return window.create(peripheral.wrap(i), 1, 1, width, height)
+        end
     end
-  end
-  remote.write('Could not find a monitor, using terminal.')
-  width, height = term.current().getSize()
-  return window.create(term.current(), 1, 1, width, height)
+    remote.write('Could not find a monitor, using terminal.')
+    width, height = term.current().getSize()
+    return window.create(term.current(), 1, 1, width, height)
 end --end checkForMonitor
 
 function remote.initializeMonitor()
-  remote.monitor.clear()
-  remote.monitor.setCursorPos(1,1)
-  gui.initialize(remote.monitor)
+    remote.monitor.clear()
+    remote.monitor.setCursorPos(1,1)
+    gui.initialize(remote.monitor)
 end --end initializeMonitor
 
 function remote.performHandshake()
