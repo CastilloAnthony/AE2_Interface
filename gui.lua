@@ -80,6 +80,7 @@ function gui.main(data, allData)
     --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo, craftables
     gui.readSettings()
     --gui.initialize(gui.monitor)
+    gui.monitor.setVisible(false)
     if gui.settings['currentPage'] == 1 then
         gui.page1(data['computer'], data['time'], data['items'], data['energy'], data['fluids'])
     elseif gui.settings['currentPage'] == 2 then
@@ -99,6 +100,7 @@ function gui.main(data, allData)
     elseif gui.settings['currentPage'] == 9 then
         gui.page9()
     end
+    gui.monitor.setVisible(true)
 end --end main()
 
 function gui.updateLogPage()
@@ -334,6 +336,7 @@ function gui.updateTime()
     local tempText = gui.monitor.getTextColor()
     local tempBack = gui.monitor.getBackgroundColor()
     local x, y = gui.monitor.getCursorPos()
+    gui.monitor.setVisible(false)
     gui.monitor.setTextColor(colors.white)
     gui.monitor.setBackgroundColor(colors.gray)
     for i=1, gui.width do
@@ -345,6 +348,7 @@ function gui.updateTime()
     gui.monitor.setCursorPos(x, y)
     gui.monitor.setTextColor(tempText)
     gui.monitor.setBackgroundColor(tempBack)
+    gui.monitor.setVisible(true)
 end
 
 function gui.clearScreen()

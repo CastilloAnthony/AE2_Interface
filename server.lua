@@ -11,6 +11,7 @@ server.bridge = nil
 server.monitor = nil
 server.modem = nil
 server.snapshot = nil
+server.snapshotItems = nil
 server.craftRequests = {}
 
 function server.write(text)
@@ -44,11 +45,14 @@ function server.checkForMonitor()
   for _, i in pairs(peripheral.getNames()) do
     if peripheral.getType(i) == 'monitor' then
       server.write('Monitor found!')
-      return peripheral.wrap(i)
+      -- return peripheral.wrap(i)
+      width, height = peripheral.wrap(i).getSize()
+      return window.create(peripheral.wrap(i), 1, 1, width, height)
     end
   end
   server.write('Could not find a monitor, using terminal.')
-  return term
+  width, height = term.current().getSize()
+  return window.create(term.current(), 1, 1, width, height)
 end --end checkForMonitor
 
 function server.checkForWirelessModem()
@@ -117,7 +121,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
             server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = textutils.serialize(server.snapshot, {['allow_repetitions'] = true })}})
             server.write('Sent snapshot packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'allData' then
-            server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.getAllItemsInfo()}})
+            server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.snapshotItems}})
             -- server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
           elseif message['message'] == 'keys' then
             server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
@@ -159,9 +163,6 @@ end --end checkCraftingqueue
 function server.initializeMonitor()
   server.monitor.clear()
   server.monitor.setCursorPos(1,1)
-  if server.monitor ~= term then
-    server.monitor.setTextScale(1)
-  end
   gui.initialize(server.monitor)
 end --end initializeMonitor
 
@@ -251,26 +252,30 @@ end
 
 function server.generateSnapshots() -- Run in Parallel
   while true do
-    if math.floor(os.epoch('local')/1000) % 5 == 0 then
-      server.snapshot = server.gatherData()
-      coroutine.yield()
-      server.checkCraftingQueue()
-      coroutine.yield()
-      server.broadcastDataAvailable()
-      os.sleep(3)
-    end
-    os.sleep(0)
+    server.snapshot = server.gatherData()
     coroutine.yield()
+    server.snapshotItems = server.getAllItemsInfo()
+    coroutine.yield()
+    if math.floor(os.epoch('local')/1000) % 5 == 0 then
+      server.broadcastDataAvailable()
+      coroutine.yield()
+    end
+    server.checkCraftingQueue()
+    coroutine.yield()
+    os.sleep(0)
   end
 end --end generateSnapshots
 
 function server.eventHandler() -- Run in Parallel
   while true do
+    local timer = os.startTimer(100)
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
-    if event == 'modem_message' then
+    if event == 'timer' then
+      timer = nil
+    elseif event == 'modem_message' then
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
     elseif event == 'mouse_up' or event == 'monitor_touch' then
-      gui.clickedButton(arg1, arg2, arg3, server.gatherData()['craftables'])
+      gui.clickedButton(arg1, arg2, arg3, server.snapshot['craftables'])
     elseif evetn == 'mouse_wheel' then
       gui.mouseWheel(event, arg1, arg2, arg3)
     -- else
@@ -280,10 +285,10 @@ function server.eventHandler() -- Run in Parallel
 end --end eventHandler
 
 function server.main() -- Run in Parallel
+  server.snapshot = server.gatherData()
+  server.snapshotItems = server.getAllItemsInfo()
   while true do
-    -- local data = server.gatherData()
-    gui.main(server.gatherData(), server.getAllItemsInfo())
-    -- server.checkCraftingQueue()
+    gui.main(server.snapshot, server.snapshotItems)
     os.sleep(0)
   end
 end --end main

@@ -46,18 +46,18 @@ function remote.checkForMonitor()
     if peripheral.getType(i) == 'monitor' then
       remote.write('Monitor found!')
       return peripheral.wrap(i)
+      width, height = peripheral.wrap(i).getSize()
+      return window.create(peripheral.wrap(i), 1, 1, width, height)
     end
   end
   remote.write('Could not find a monitor, using terminal.')
-  return term
+  width, height = term.current().getSize()
+  return window.create(term.current(), 1, 1, width, height)
 end --end checkForMonitor
 
 function remote.initializeMonitor()
   remote.monitor.clear()
   remote.monitor.setCursorPos(1,1)
-  if remote.monitor ~= term then
-    remote.monitor.setTextScale(1)
-  end
   gui.initialize(remote.monitor)
 end --end initializeMonitor
 
@@ -106,7 +106,6 @@ function remote.requestServerKeys()
             if (channel == 28) then
                 if message['packet']['type'] == 'keys' then
                     if (message['verify']['id'] == message['packet']['data']['id']) and (message['verify']['label'] == message['packet']['data']['label']) then
-                        print('Keys recieved')
                         local file = fs.open('./AE2_Interface/server.key', 'w')
                         file.write(textutils.serialize(message['packet']['data']))
                         file.close()
@@ -202,7 +201,7 @@ end --end getComputerInfo
 
 function remote.getPackets()
     remote.gettingData = true
-    gui.log('Retrieving data...')
+    gui.log('Requesting data...')
     remote.data = remote.latestData()
     remote.allData = remote.requestAllData()
     gui.log('Packets recieved!')
@@ -230,8 +229,11 @@ function remote.eventHandler()
                 remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = v, ['timestamp'] = k}})
             end
         end
+        local timer = os.startTimer(100)
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
-        if event == 'mouse_up' or event == 'monitor_touch' then
+        if event == 'timer' then
+            timer = nil
+        elseif event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
             gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         elseif event == 'mouse_wheel' then
