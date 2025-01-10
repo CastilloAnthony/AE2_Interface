@@ -45,7 +45,7 @@ function remote.checkForMonitor()
   for _, i in pairs(peripheral.getNames()) do
     if peripheral.getType(i) == 'monitor' then
       remote.write('Monitor found!')
-      return peripheral.wrap(i)
+    --   return peripheral.wrap(i)
       width, height = peripheral.wrap(i).getSize()
       return window.create(peripheral.wrap(i), 1, 1, width, height)
     end

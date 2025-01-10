@@ -257,6 +257,7 @@ function server.generateSnapshots() -- Run in Parallel
     server.snapshotItems = server.getAllItemsInfo()
     coroutine.yield()
     if math.floor(os.epoch('local')/1000) % 5 == 0 then
+      server.snapshot = server.gatherData()
       server.broadcastDataAvailable()
       coroutine.yield()
     end
