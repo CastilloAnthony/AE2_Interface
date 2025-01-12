@@ -12,17 +12,37 @@ server.monitor = nil
 server.modem = nil
 server.snapshot = nil
 server.snapshotItems = nil
+server.storages = {}
 server.craftRequests = {}
 
 function server.write(text)
   if text ~= nil then
     --write(text)
-    gui.log(text)
+    gui.log(text, server.selectDrive())
   end
   --term.scroll(1)
   local _, y = term.getCursorPos()
   term.setCursorPos(1, y)
 end --end write
+
+function server.findDrives()
+  for _, i in pairs(peripheral.getNames()) do
+    if string.find(peripheral.getType(i), 'drive') then
+      server.storages[#server.storages] = peripheral.wrap(i)
+    end
+  end
+end -- findDrives
+
+function server.selectDrive()
+  for _, i in pairs(server.storages) do
+    if i.isDiskPresent() then
+      if fs.getFreeSpace(i.getMountPath()) > 500 then
+        return i.getMountPath()..'/'
+      end
+    end
+  end
+  return './'
+end
 
 function server.moveCursor()
   server.writeTerm()
@@ -86,7 +106,7 @@ end --end broadcast
 function server.broadcastDataAvailable()
   local info = {['message'] = 'There is a new snapshot available.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'newDataAvailable'}}
   server.modem.transmit(7, 0, info)
-  gui.log('A new snapshot is available.')
+  gui.log('A new snapshot is available.', server.selectDrive())
 end
 
 function server.checkMessages(event, side, channel, replyChannel, message, distance)
@@ -153,7 +173,7 @@ function server.checkCraftingQueue()
       gui.writeSettings()
       if item ~= nil then
         server.bridge.craftItem(item)
-        gui.log('Crafting one '..item['displayName'])
+        gui.log('Crafting one '..item['displayName'], server.selectDrive())
         break
       end
     end
@@ -186,7 +206,7 @@ end --end checkIfInTable
 function server.getItemStorageInfo()
   local items = server.getAllItemsInfo() -- got nil value for items
   if items == nil then
-    gui.log('Encountered an error while reading data. (Was the AE network down?)')
+    gui.log('Encountered an error while reading data. (Was the AE network down?)', server.selectDrive())
     gui.updateLogPage()
     while items == nil do
       items = server.getAllItemsInfo()
@@ -240,7 +260,7 @@ end --end getComputerInfo
 function server.gatherData()
   local data = {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo(), ['craftables'] = server.bridge.listCraftableItems()}
   if data == nil then
-    gui.log('Encountered an error while reading data. (Was the AE network down?)')
+    gui.log('Encountered an error while reading data. (Was the AE network down?)', server.selectDrive())
     gui.updateLogPage()
     while data == nil do
       data = {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo(), ['craftables'] = server.bridge.listCraftableItems()}
@@ -268,6 +288,7 @@ function server.generateSnapshots() -- Run in Parallel
 end --end generateSnapshots
 
 function server.eventHandler() -- Run in Parallel
+  os.sleep(1)
   while true do
     local timer = os.startTimer(100)
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
@@ -303,6 +324,7 @@ end --end guiTime
 
 function server.initialize()
   local _, y = term.getSize()
+  server.findDrives()
   term.setCursorPos(1, y)
   server.write('Initializing...')
   if os.getComputerLabel() == nil then

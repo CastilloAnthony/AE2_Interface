@@ -30,29 +30,15 @@ function gui.write(string)
     gui.monitor.write(string)
 end --end write
 
-function gui.log(string)
+function gui.log(string, storage)
     local logging = {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = string}
     table.insert(gui.logList, logging)
-    local storage = ''
-    if fs.isDir('disk') then
-        if fs.getFreeSpace('disk') >= 500 then
-            storage = 'disk'
-        else
-            table.insert(gui.logList, {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = 'disk is full.'})
-        end
-    elseif storage == '' then
-        for i=1, 10 do
-            if fs.isDir('disk'..i) then
-                if fs.getFreeSpace('disk'..i) >= 500 then
-                    storage = 'disk'..i
-                    break
-                else
-                    table.insert(gui.logList, {['order'] = gui.logCount+1, ['time'] = os.date('%T'), ['message'] = 'disk'..i..' is full.'})
-                end
-            end
-        end
-    end
-    local file = fs.open(storage..'/AE2_Interface/logs/'..os.date('%F'), 'a')
+    local file = nil
+    if storage ~= nil then
+        file = fs.open(storage..'AE2_Interface/logs/'..os.date('%F'), 'a')
+    else
+        file = fs.open('./'..'AE2_Interface/logs/'..os.date('%F'), 'a')
+    end 
     file.write(logging['time']..' '..logging['message']..'\n')
     file.close()
     gui.logCount = gui.logCount + 1
@@ -74,7 +60,7 @@ end --end log
 
 function gui.main(data, allData)
     if data == nil or allData == nil then
-        gui.log('No data was given.')
+        gui.log('No data was given.', nil)
         return
     end
     --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo, craftables
@@ -252,7 +238,7 @@ function gui.clickedButton(button, x, y, craftables)
                     local userInput = read(nil, gui.settings['searchHistory'], gui.searchPartialComplete)
                     gui.userSearch = string.lower(userInput)
                     gui.searching = false
-                    gui.log('Usr Inpt: '..gui.userSearch)
+                    gui.log('Usr Inpt: '..gui.userSearch, nil)
                 end
             end
         elseif gui.settings['currentPage'] == 6 then -- Craftables

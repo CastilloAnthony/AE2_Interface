@@ -8,17 +8,37 @@ remote.modem = nil
 remote.data = nil
 remote.allData = nil
 remote.gettingData = false
+remote.storages = {}
 remote.craftRequests = {}
 
 function remote.write(text)
     if text ~= nil then
         --textutils.slowWrite(text)
-        gui.log(text)
+        gui.log(text, remote.selectDrive())
     end
     --term.scroll(1)
     local _, y = term.getCursorPos()
     term.setCursorPos(1, y)
 end --end write
+
+function remote.findDrives()
+    for _, i in pairs(peripheral.getNames()) do
+      if string.find(peripheral.getType(i), 'drive') then
+        remote.storages[#remote.storages] = peripheral.wrap(i)
+      end
+    end
+  end -- findDrives
+  
+  function remote.selectDrive()
+    for _, i in pairs(remote.storages) do
+      if i.isDiskPresent() then
+        if fs.getFreeSpace(i.getMountPath()) > 500 then
+          return i.getMountPath()..'/'
+        end
+      end
+    end
+    return './'
+  end  
 
 function remote.readData()
     local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
@@ -83,8 +103,8 @@ function remote.performHandshake()
                     if message['packet']['success'] == true then
                         remote.write('Handshake with '..message['verify']['label'])
                         remote.write('Msg: '..message['message'])
-                        gui.log('Handshake: '..message['verify']['label'])
-                        gui.log('Msg: '..message['message'])
+                        gui.log('Handshake: '..message['verify']['label'], remote.selectDrive())
+                        gui.log('Msg: '..message['message'], remote.selectDrive())
                         return true
                     end
                 end
@@ -111,8 +131,8 @@ function remote.requestServerKeys()
                         file.close()
                         remote.write('Keys retrieved from: '..message['verify']['label'])
                         remote.write('Msg: '..message['message'])
-                        gui.log('Got keys: '..message['packet']['data']['id']..' '..message['packet']['data']['label'])
-                        gui.log('Msg: '..message['message'])
+                        gui.log('Got keys: '..message['packet']['data']['id']..' '..message['packet']['data']['label'], remote.selectDrive())
+                        gui.log('Msg: '..message['message'], remote.selectDrive())
                         return true
                     end
                 end
@@ -201,10 +221,10 @@ end --end getComputerInfo
 
 function remote.getPackets()
     remote.gettingData = true
-    gui.log('Requesting data...')
+    gui.log('Requesting data...', remote.selectDrive())
     remote.data = remote.latestData()
     remote.allData = remote.requestAllData()
-    gui.log('Packets recieved!')
+    gui.log('Packets recieved!', remote.selectDrive())
     remote.gettingData = false
 end
 
@@ -260,7 +280,7 @@ function remote.eventHandler()
                         if arg4['message'] == 'Acknowledged.' then
                             if remote.craftRequests[arg4['packet']['timestamp']] ~= nil then
                                 -- acknowledged = True
-                                gui.log('Sent crafting request for one '..remote.craftRequests[arg4['packet']['timestamp']]['displayName'])
+                                gui.log('Sent crafting request for one '..remote.craftRequests[arg4['packet']['timestamp']]['displayName'], remote.selectDrive())
                                 table.remove(remote.craftRequests, arg4['packet']['timestamp'])
                             end
                         end
@@ -284,11 +304,12 @@ function remote.guiTime()
     --remote.getPackets()
     while true do
         gui.updateTime()
-        os.sleep(0.5)
+        os.sleep(0.1)
     end
 end
 
 function remote.initialize()
+    remote.findDrives()
     local _, y = term.getSize()
     term.setCursorPos(1, y)
     term.clear()
