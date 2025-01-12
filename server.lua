@@ -12,7 +12,9 @@ server.monitor = nil
 server.modem = nil
 server.snapshot = nil
 server.snapshotItems = nil
+server.currDrive = nil
 server.storages = {}
+server.fullStorages = {}
 server.craftRequests = {}
 
 function server.write(text)
@@ -28,21 +30,47 @@ end --end write
 function server.findDrives()
   for _, i in pairs(peripheral.getNames()) do
     if string.find(peripheral.getType(i), 'drive') then
-      server.storages[#server.storages] = peripheral.wrap(i)
+      server.storages[#server.storages] = i
+      server.fullStorages[i] = nil
     end
   end
-end -- findDrives
+end --end findDrives
 
 function server.selectDrive()
+  if server.currDrive ~= nil then
+    if peripheral.wrap(server.currDrive).isDiskPresent() then
+      if fs.getFreeSpace(peripheral.wrap(server.currDrive).getMountPath()) > 500 then
+        return server.currDrive
+      end
+    end
+  end
   for _, i in pairs(server.storages) do
-    if i.isDiskPresent() then
-      if fs.getFreeSpace(i.getMountPath()) > 500 then
-        return i.getMountPath()..'/'
+    if peripheral.wrap(i).isDiskPresent() then
+      if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
+        server.currDrive = i
+        gui.log('Now saving logs to '..server.currDrive, server.selectDrive())
+        return peripheral.wrap(i).getMountPath()..'/'
+      else
+        if server.fullStorages[i] == nil then
+          server.fullStorages[i] = i
+        end
       end
     end
   end
   return './'
-end
+end --end selectDrive
+
+function server.checkDriveStorage()
+  for _, i in pairs(server.fullStorages) do
+    if peripheral.wrap(i).isDiskPresent() then
+      if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
+        server.fullStorages[i] = nil
+      else
+        gui.log(i..' is full.', server.selectDrive())
+      end
+    end
+  end
+end --end checkDriveStorage
 
 function server.moveCursor()
   server.writeTerm()
@@ -155,10 +183,12 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
               server.write('Crafting request from '..message['verify']['label']..' for one '..message['packet']['data']['displayName'])
             end
           else
-           -- server.write('Unknown request.')
+            -- gui.log('Unknown request from '..message['verify']['id'])
+           server.write('Unknown request from '..message['verify']['id'])
           end
         else
-          --server.write('Unauthorized client request.')
+          -- gui.log('Unauthorized client request.')
+          -- server.write('Unauthorized client request.')
         end
       end
     end
@@ -241,8 +271,8 @@ function server.getCPUInfo()
 end
 
 function server.getCellsInfo()
-  --return server.bridge.listCells()
-  return {{bytesPerType = 8, cellType = "item", item = "ae2:item_storage_cell_1k", totalBytes = 1024}}
+  return server.bridge.listCells() -- Used to be bugged if a storage bus was connected to an inventory on the network, seems fine now.
+  -- return {{bytesPerType = 8, cellType = "item", item = "ae2:item_storage_cell_1k", totalBytes = 1024}}
 end
 
 function server.getFluidsInfo()
@@ -280,6 +310,7 @@ function server.generateSnapshots() -- Run in Parallel
       server.snapshot = server.gatherData()
       server.broadcastDataAvailable()
       coroutine.yield()
+      server.checkDriveStorage()
     end
     server.checkCraftingQueue()
     coroutine.yield()

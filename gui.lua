@@ -248,9 +248,13 @@ function gui.clickedButton(button, x, y, craftables)
                         i = 1
                         for k, v in pairs(craftables) do
                             if i == y-3 then
+                                item = v
+                                item['count'] = 1
                                 gui.readSettings()
-                                table.insert(gui.settings['craftingQueue'], v)
-                                gui.writeSettings()
+                                if gui.settings['craftingQueue'][#gui.settings['craftingQueue']] ~= item then
+                                    table.insert(gui.settings['craftingQueue'], item)
+                                    gui.writeSettings()
+                                end
                                 break
                             end
                             i = i + 1

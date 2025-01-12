@@ -8,7 +8,9 @@ remote.modem = nil
 remote.data = nil
 remote.allData = nil
 remote.gettingData = false
+remote.currDrive = nil
 remote.storages = {}
+remote.fullStorages = {}
 remote.craftRequests = {}
 
 function remote.write(text)
@@ -23,22 +25,51 @@ end --end write
 
 function remote.findDrives()
     for _, i in pairs(peripheral.getNames()) do
-      if string.find(peripheral.getType(i), 'drive') then
-        remote.storages[#remote.storages] = peripheral.wrap(i)
-      end
-    end
-  end -- findDrives
-  
-  function remote.selectDrive()
-    for _, i in pairs(remote.storages) do
-      if i.isDiskPresent() then
-        if fs.getFreeSpace(i.getMountPath()) > 500 then
-          return i.getMountPath()..'/'
+        if string.find(peripheral.getType(i), 'drive') then
+            remote.storages[#remote.storages] = i
+            remote.fullStorages[i] = nil
         end
-      end
+    end
+end --end findDrives
+
+function remote.selectDrive()
+    if remote.currDrive ~= nil then
+        if peripheral.wrap(remote.currDrive).isDiskPresent() then
+            if fs.getFreeSpace(peripheral.wrap(remote.currDrive).getMountPath()) > 500 then
+                return remote.currDrive
+            end
+        end
+    end
+    for _, i in pairs(remote.storages) do
+        if peripheral.wrap(i).isDiskPresent() then
+            if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
+                if remote.fullStorages[i] ~= nil then
+                    remote.fullStorages[i] = nil
+                end
+                remote.currDrive = i
+                gui.log('Logs: '..remote.currDrive)
+                return peripheral.wrap(i).getMountPath()..'/'
+            else
+                if remote.fullStorages[i] == nil then
+                    remote.fullStorages[i] = i
+                end
+            end
+        end
     end
     return './'
-  end  
+end --end selectDrive
+
+function remote.checkDriveStorage()
+    for _, i in pairs(remote.fullStorages) do
+        if peripheral.wrap(i).isDiskPresent() then
+            if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
+                remote.fullStorages[i] = nil
+            else
+                gui.log(i..' is full.', remote.selectDrive())
+            end
+        end
+    end
+end --end checkDriveStorage
 
 function remote.readData()
     local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
@@ -70,7 +101,7 @@ function remote.checkForMonitor()
             return window.create(peripheral.wrap(i), 1, 1, width, height)
         end
     end
-    remote.write('Could not find a monitor, using terminal.')
+    remote.write('No monitor, defaulting to the terminal.')
     width, height = term.current().getSize()
     return window.create(term.current(), 1, 1, width, height)
 end --end checkForMonitor
@@ -101,8 +132,8 @@ function remote.performHandshake()
             if message['verify']['label'] == 'AE2_Server' then
                 if (message['packet']['type'] == 'handshake') then
                     if message['packet']['success'] == true then
-                        remote.write('Handshake with '..message['verify']['label'])
-                        remote.write('Msg: '..message['message'])
+                        -- remote.write('Handshake with '..message['verify']['label'])
+                        -- remote.write('Msg: '..message['message'])
                         gui.log('Handshake: '..message['verify']['label'], remote.selectDrive())
                         gui.log('Msg: '..message['message'], remote.selectDrive())
                         return true
@@ -129,8 +160,8 @@ function remote.requestServerKeys()
                         local file = fs.open('./AE2_Interface/server.key', 'w')
                         file.write(textutils.serialize(message['packet']['data']))
                         file.close()
-                        remote.write('Keys retrieved from: '..message['verify']['label'])
-                        remote.write('Msg: '..message['message'])
+                        -- remote.write('Keys retrieved from: '..message['verify']['label'])
+                        -- remote.write('Msg: '..message['message'])
                         gui.log('Got keys: '..message['packet']['data']['id']..' '..message['packet']['data']['label'], remote.selectDrive())
                         gui.log('Msg: '..message['message'], remote.selectDrive())
                         return true
@@ -221,10 +252,10 @@ end --end getComputerInfo
 
 function remote.getPackets()
     remote.gettingData = true
-    gui.log('Requesting data...', remote.selectDrive())
+    -- gui.log('Requesting data...', remote.selectDrive())
     remote.data = remote.latestData()
     remote.allData = remote.requestAllData()
-    gui.log('Packets recieved!', remote.selectDrive())
+    gui.log('Snapshot Updated!', remote.selectDrive())
     remote.gettingData = false
 end
 
@@ -304,7 +335,7 @@ function remote.guiTime()
     --remote.getPackets()
     while true do
         gui.updateTime()
-        os.sleep(0.1)
+        os.sleep(0.5)
     end
 end
 
