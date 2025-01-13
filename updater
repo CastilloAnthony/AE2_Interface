@@ -3,7 +3,7 @@ shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/
 shell.run('rm ./AE2_Interface/gui.lua')
 shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/gui.lua ./ae2_interface/gui.lua')
 shell.run('rm ./AE2_Interface/main.lua')
-shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/main.lua ./ae2_interface/main.lua')
+shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/ae2_interface.lua ./ae2_interface/ae2_interface.lua')
 shell.run('rm ./AE2_Interface/updater')
 shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/updater ./ae2_interface/updater')
 

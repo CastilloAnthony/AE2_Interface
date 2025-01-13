@@ -1,1 +1,1 @@
-shell.run('./AE2_Interface/main.lua')
+shell.openTab('./AE2_Interface/ae2_interface.lua')
