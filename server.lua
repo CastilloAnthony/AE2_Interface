@@ -40,7 +40,7 @@ function server.selectDrive()
   if server.currDrive ~= nil then
     if peripheral.wrap(server.currDrive).isDiskPresent() then
       if fs.getFreeSpace(peripheral.wrap(server.currDrive).getMountPath()) > 500 then
-        return server.currDrive
+        return peripheral.wrap(server.currDrive).getMountPath()..'/'
       end
     end
   end
@@ -180,7 +180,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
             else
               server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
               server.craftRequests[message['packet']['timestamp']] = message['packet']['data']
-              server.write('Crafting request from '..message['verify']['label']..' for one '..message['packet']['data']['displayName'])
+              server.write('Crafting request from ID: '..message['verify']['id']..' '..message['verify']['label']..' for one '..message['packet']['data']['displayName'])
             end
           else
             -- gui.log('Unknown request from '..message['verify']['id'])
@@ -363,9 +363,9 @@ function server.initialize()
     server.write('Set computer\'s label to '..os.getComputerLabel())
   end
   local initial = {['computerInfo'] = server.getComputerInfo() , ['bridge'] = server.checkForBridge(), ['monitor'] = server.checkForMonitor(), ['modem'] = server.checkForWirelessModem()}
-  for _, i in pairs(initial) do
+  for k, i in pairs(initial) do
     if i == false then
-      server.write('Cannot find either a meBridge or a wireless modem.')
+      server.write('There was an error in setting up a '..k)
       return false
     end
   end

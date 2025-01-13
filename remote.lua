@@ -36,7 +36,7 @@ function remote.selectDrive()
     if remote.currDrive ~= nil then
         if peripheral.wrap(remote.currDrive).isDiskPresent() then
             if fs.getFreeSpace(peripheral.wrap(remote.currDrive).getMountPath()) > 500 then
-                return remote.currDrive
+                return peripheral.wrap(remote.currDrive).getMountPath()..'/'
             end
         end
     end
@@ -129,7 +129,7 @@ function remote.performHandshake()
         if (channel == 7) then
             return remote.performHandshake()
         elseif (channel == 14) then
-            if message['verify']['label'] == 'AE2_Server' then
+            if string.find(string.lower(message['verify']['label']), 'server') or string.find(string.lower(message['verify']['label']), 'ae') then
                 if (message['packet']['type'] == 'handshake') then
                     if message['packet']['success'] == true then
                         -- remote.write('Handshake with '..message['verify']['label'])
@@ -266,6 +266,7 @@ function remote.eventHandler()
     --local event, arg1, arg2, arg3, arg4, arg5
     while true do
         -- local acknowledged = nil
+        -- gui.updateTime()
         gui.readSettings()
         if #gui.settings['craftingQueue'] > 0 then -- Crafting Queue checking one item at a time
             local item = table.remove(gui.settings['craftingQueue'])
@@ -280,10 +281,11 @@ function remote.eventHandler()
                 remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = v, ['timestamp'] = k}})
             end
         end
-        local timer = os.startTimer(100)
+        local timer = os.startTimer(0.5)
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
         if event == 'timer' then
             timer = nil
+            -- coroutine.yield()
         elseif event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
             gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
@@ -319,7 +321,7 @@ function remote.eventHandler()
                 end
             end
         else
-            os.queueEvent(event, arg1, arg2, arg3, arg4, arg5)
+            -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5) -- Causes multishell issue and periodic freezing of normal timeclock
         end
         -- if acknowledged ~= nil then
         --     if not acknowledged then
@@ -388,6 +390,7 @@ function remote.initialize()
     remote.getPackets()
     gui.main(remote.data, remote.allData)
     parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.checkCraftingQueue)--, remote.mainLoop)
+    -- remote.eventHandler()
 end --end initialize
 
 return remote
