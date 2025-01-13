@@ -1,1 +1,2 @@
-shell.openTab('./AE2_Interface/ae2_interface.lua')
+local id = shell.openTab('./AE2_Interface/ae2_interface.lua')
+shell.switchTab(id)
