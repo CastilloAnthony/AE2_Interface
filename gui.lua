@@ -215,7 +215,15 @@ end --end searchPartialComplete
 function gui.clickedButton(button, x, y, craftables)
     gui.readSettings()
     if button == 1 or peripheral.isPresent(tostring(button)) then
-        if y == gui.height-1 then -- Previous/Next Buttons
+        if y == 1 and x == gui.width then -- Terminate Program
+            gui.monitor.setBackgroundColor(colors.black)
+            gui.monitor.clear()
+            gui.monitor.setTextColor(colors.red)
+            print('AE2 Interface has been ')
+            gui.monitor.setTextColor(colors.white)
+            os.queueEvent('terminate')
+            os.sleep(100)
+        elseif y == gui.height-1 then -- Previous/Next Buttons
             if x>=gui.width-6 and x<=gui.width-2 then --Next
                 gui.nextPage(true)
                 gui.writeSettings()
@@ -262,14 +270,6 @@ function gui.clickedButton(button, x, y, craftables)
                     end
                 end
             end
-        elseif y == 1 and x == gui.width then
-            gui.monitor.setBackgroundColor(colors.black)
-            gui.monitor.clear()
-            gui.monitor.setTextColor(colors.red)
-            print('AE2 Interface has been ')
-            gui.monitor.setTextColor(colors.white)
-            os.queueEvent('terminate')
-            os.sleep(100)
         end
     end
     return false
