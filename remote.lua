@@ -248,10 +248,19 @@ function remote.eventHandler()
                                 end
                             end
                         elseif arg4['packet']['type'] == 'latestSnapshot' then
-                            remote.data = textutils.unserialize(arg4['packet']['data'])
-                            gui.log('Snapshot Updated!', remote.selectDrive())
+                            if remote.data == nil then
+                                remote.data = arg4['packet']['data']
+                                gui.log('Snapshot Updated!', remote.selectDrive())
+                            elseif remote.data['time'] ~= arg4['packet']['data']['time'] then
+                                remote.data = arg4['packet']['data']
+                                gui.log('Snapshot Updated!', remote.selectDrive())
+                            end
                         elseif arg4['packet']['type'] == 'allData' then
-                            remote.allData = textutils.unserialize(arg4['packet']['data'])
+                            if remote.allData == nil then
+                                remote.allData = arg4['packet']['data']
+                            elseif remote.allData ~= arg4['packet']['data'] then
+                                remote.allData = arg4['packet']['data']
+                            end
                             -- gui.log('Items Updated!', remote.selectDrive())
                         end
                     end
