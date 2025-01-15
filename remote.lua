@@ -251,14 +251,14 @@ function remote.eventHandler()
                             if remote.data == nil then
                                 remote.data = arg4['packet']['data']
                                 gui.log('Snapshot Updated!', remote.selectDrive())
-                            elseif remote.data['time'] ~= arg4['packet']['data']['time'] then
+                            elseif remote.data['time']['clock'] ~= arg4['packet']['data']['time']['clock'] then
                                 remote.data = arg4['packet']['data']
                                 gui.log('Snapshot Updated!', remote.selectDrive())
                             end
                         elseif arg4['packet']['type'] == 'allData' then
                             if remote.allData == nil then
                                 remote.allData = arg4['packet']['data']
-                            elseif remote.allData ~= arg4['packet']['data'] then
+                            elseif remote.allData['time']['clock'] ~= arg4['packet']['data']['time']['clock'] then
                                 remote.allData = arg4['packet']['data']
                             end
                             -- gui.log('Items Updated!', remote.selectDrive())
@@ -282,9 +282,12 @@ end --end main
 
 function remote.guiTime()
     --remote.getPackets()
+    while remote.data == nil or remote.allData == nil do
+        os.sleep(1/60)
+    end
     while true do
         gui.updateTime()
-        gui.main(remote.data, remote.allData)
+        gui.main(remote.data, remote.allData['data'])
         os.sleep(1/60)
     end
 end

@@ -35,9 +35,6 @@ function server.findDrives()
       -- server.fullStorages[i] = nil
     end
   end
-  local file = fs.open('storages.temp', 'w')
-  file.write(textutils.serialize(server.storages))
-  file.close()
 end --end findDrives
 
 function server.checkIfKeyInTable(table, key)
@@ -84,10 +81,6 @@ function server.checkDriveStorage()
     end
   end
 end --end checkDriveStorage
-
-function server.moveCursor()
-  server.writeTerm()
-end --end moveCursor
 
 function server.checkForBridge()
   for _, i in pairs(peripheral.getNames()) do
@@ -324,7 +317,7 @@ function server.generateSnapshots() -- Run in Parallel
   while true do
     server.snapshot = server.gatherData()
     coroutine.yield()
-    server.snapshotItems = server.getAllItemsInfo()
+    server.snapshotItems = {['time'] = server.getTimeInfo(), ['data'] = server.getAllItemsInfo()}
     coroutine.yield()
     if math.floor(os.epoch('local')/1000) % 5 == 0 then
       server.snapshot = server.gatherData()
@@ -358,20 +351,14 @@ function server.eventHandler() -- Run in Parallel
   end
 end --end eventHandler
 
-function server.main() -- Run in Parallel
-  server.snapshot = server.gatherData()
-  server.snapshotItems = server.getAllItemsInfo()
-  while true do
-    gui.main(server.snapshot, server.snapshotItems)
-    os.sleep(0)
-  end
-end --end main
-
 function server.guiTime() -- Run in Parallel
-  server.snapshot = server.gatherData()
-  server.snapshotItems = server.getAllItemsInfo()
+  -- server.snapshot = server.gatherData()
+  -- server.snapshotItems = server.getAllItemsInfo()
+  while server.snapshot == nil or server.snapshotItems == nil do
+    os.sleep(1/60)
+  end
   while true do
-    gui.main(server.snapshot, server.snapshotItems)
+    gui.main(server.snapshot, server.snapshotItems['data'])
     gui.updateTime()
     os.sleep(1/60)
   end
@@ -425,3 +412,20 @@ function server.initialize()
 end --end initialize
 
 return server
+
+-- Deprecated Below --
+
+
+-- function server.main() -- Run in Parallel
+--   server.snapshot = server.gatherData()
+--   server.snapshotItems = server.getAllItemsInfo()
+--   while true do
+--     gui.main(server.snapshot, server.snapshotItems)
+--     os.sleep(0)
+--   end
+-- end --end main
+
+-- function server.moveCursor()
+--   server.writeTerm()
+-- end --end moveCursor
+
