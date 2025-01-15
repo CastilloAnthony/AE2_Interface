@@ -30,11 +30,24 @@ end --end write
 function server.findDrives()
   for _, i in pairs(peripheral.getNames()) do
     if string.find(peripheral.getType(i), 'drive') then
-      server.storages[#server.storages] = i
-      server.fullStorages[i] = nil
+      table.insert(server.storages, i)
+      -- server.storages[#server.storages] = i
+      -- server.fullStorages[i] = nil
     end
   end
+  local file = fs.open('storages.temp', 'w')
+  file.write(textutils.serialize(server.storages))
+  file.close()
 end --end findDrives
+
+function server.checkIfKeyInTable(table, key)
+  for _, i in pairs(table) do
+    if i == key then
+      return true
+    end
+  end
+  return false
+end
 
 function server.selectDrive()
   if server.currDrive ~= nil then
@@ -51,8 +64,8 @@ function server.selectDrive()
         gui.log('Now saving logs to '..server.currDrive, server.selectDrive())
         return peripheral.wrap(i).getMountPath()..'/'
       else
-        if server.fullStorages[i] == nil then
-          server.fullStorages[i] = i
+        if server.checkIfKeyInTable(server.fullStorages, i) == false then
+          table.insert(server.fullStorages, i)
         end
       end
     end

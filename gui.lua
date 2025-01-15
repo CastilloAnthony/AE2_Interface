@@ -109,12 +109,26 @@ function gui.compareItems(a, b)
 end --end compareItems
 
 function gui.compareCells(a, b)
-    if tonumber(a['totalBytes']) > tonumber(b['totalBytes']) then
+    if tonumber(a['totalBytes']) ~= tonumber(b['totalBytes']) then
         return tonumber(a['totalBytes']) > tonumber(b['totalBytes'])
     else
         return a['cellType'] < b['cellType']
     end
 end --end compareCells
+
+function gui.compareCPUS(a, b)
+    if tonumber(a['storage']) ~= tonumber(b['storage']) then
+        return tonumber(a['storage']) > tonumber(b['storage'])
+    elseif tonumber(a['coProcessors']) ~= tonumber(b['coProcessors']) then
+        return tonumber(a['coProcessors']) ~= tonumber(b['coProcessors'])
+    elseif a['isBusy'] then
+        return a['isBusy']
+    elseif b['isBusy'] then
+        return b['isBusy']
+    else
+        return true
+    end
+end
 
 function gui.populateTable(allData)
     if gui.userSearch ~= gui.settings['userSearch'] then
@@ -817,6 +831,7 @@ function gui.page8(cpuInfo) -- CPUs
         gui.monitor.write('COs')
         gui.monitor.setCursorPos(gui.width/4*3, 5)
         gui.monitor.write('Storage')
+        table.sort(cpuInfo, gui.compareCPUS)
         for i, j in pairs(cpuInfo) do
             if i>gui.height-8 then
                 break

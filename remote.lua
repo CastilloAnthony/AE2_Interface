@@ -208,6 +208,7 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
         -- else
         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
         end
+        os.sleep(1/60)
     end
 end --end retrieveData
 
@@ -238,6 +239,7 @@ function remote.requestAllData()
         -- else
         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
         end
+        os.sleep(1/60)
     end
 end --end requestAllData
 
@@ -258,7 +260,7 @@ function remote.getComputerInfo()
     return {['id'] = os.computerID(), ['label'] = os.computerLabel()}
 end --end getComputerInfo
 
-function remote.getPackets()
+function remote.getPackets() -- Infinite Looping here
     remote.gettingData = true
     -- gui.log('Requesting data...', remote.selectDrive())
     remote.data = remote.latestData()
