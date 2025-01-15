@@ -127,16 +127,20 @@ function remote.performHandshake()
     end
     if (event == 'modem_message') then
         if (channel == 7) then
-            return remote.performHandshake()
+            if message['verify'] ~= nil then
+                return remote.performHandshake()
+            end
         elseif (channel == 14) then
-            if string.find(string.lower(message['verify']['label']), 'server') or string.find(string.lower(message['verify']['label']), 'ae') then
-                if (message['packet']['type'] == 'handshake') then
-                    if message['packet']['success'] == true then
-                        -- remote.write('Handshake with '..message['verify']['label'])
-                        -- remote.write('Msg: '..message['message'])
-                        gui.log('Handshake: '..message['verify']['label'], remote.selectDrive())
-                        gui.log('Msg: '..message['message'], remote.selectDrive())
-                        return true
+            if message['verify'] ~= nil then
+                if string.find(string.lower(message['verify']['label']), 'server') or string.find(string.lower(message['verify']['label']), 'ae') then
+                    if (message['packet']['type'] == 'handshake') then
+                        if message['packet']['success'] == true then
+                            -- remote.write('Handshake with '..message['verify']['label'])
+                            -- remote.write('Msg: '..message['message'])
+                            gui.log('Handshake: '..message['verify']['label'], remote.selectDrive())
+                            gui.log('Msg: '..message['message'], remote.selectDrive())
+                            return true
+                        end
                     end
                 end
             end
@@ -155,16 +159,18 @@ function remote.requestServerKeys()
             return false
         elseif event == 'modem_message' then
             if (channel == 28) then
-                if message['packet']['type'] == 'keys' then
-                    if (message['verify']['id'] == message['packet']['data']['id']) and (message['verify']['label'] == message['packet']['data']['label']) then
-                        local file = fs.open('./AE2_Interface/server.key', 'w')
-                        file.write(textutils.serialize(message['packet']['data']))
-                        file.close()
-                        -- remote.write('Keys retrieved from: '..message['verify']['label'])
-                        -- remote.write('Msg: '..message['message'])
-                        gui.log('Got keys: '..message['packet']['data']['id']..' '..message['packet']['data']['label'], remote.selectDrive())
-                        gui.log('Msg: '..message['message'], remote.selectDrive())
-                        return true
+                if message['verify'] ~= nil then
+                    if message['packet']['type'] == 'keys' then
+                        if (message['verify']['id'] == message['packet']['data']['id']) and (message['verify']['label'] == message['packet']['data']['label']) then
+                            local file = fs.open('./AE2_Interface/server.key', 'w')
+                            file.write(textutils.serialize(message['packet']['data']))
+                            file.close()
+                            -- remote.write('Keys retrieved from: '..message['verify']['label'])
+                            -- remote.write('Msg: '..message['message'])
+                            gui.log('Got keys: '..message['packet']['data']['id']..' '..message['packet']['data']['label'], remote.selectDrive())
+                            gui.log('Msg: '..message['message'], remote.selectDrive())
+                            return true
+                        end
                     end
                 end
             end
@@ -188,12 +194,14 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
         end
         if (event == 'modem_message') then
             if (channel == 28) then
-                local file = fs.open('./AE2_Interface/server.key', 'r')
-                local serverKeys = textutils.unserialize(file.readAll())
-                file.close()
-                if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
-                    if message['packet']['type'] == 'latestSnapshot' then
-                        return textutils.unserialize(message['packet']['data'])
+                if message['verify'] ~= nil then
+                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local serverKeys = textutils.unserialize(file.readAll())
+                    file.close()
+                    if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
+                        if message['packet']['type'] == 'latestSnapshot' then
+                            return textutils.unserialize(message['packet']['data'])
+                        end
                     end
                 end
             end
@@ -294,27 +302,31 @@ function remote.eventHandler()
             gui.main(remote.data, remote.allData)
         elseif event == 'modem_message' then
             if arg2 == 7 then
-                local file = fs.open('./AE2_Interface/server.key', 'r')
-                local serverKeys = textutils.unserialize(file.readAll())
-                file.close()
-                if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
-                    if arg4['packet']['type'] == 'newDataAvailable' then
-                        remote.getPackets()
-                        gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
-                        --timerID = os.startTimer(16)
+                if arg4['verify'] ~= nil then
+                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local serverKeys = textutils.unserialize(file.readAll())
+                    file.close()
+                    if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
+                        if arg4['packet']['type'] == 'newDataAvailable' then
+                            remote.getPackets()
+                            gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
+                            --timerID = os.startTimer(16)
+                        end
                     end
                 end
             elseif arg2 == 28 then
-                local file = fs.open('./AE2_Interface/server.key', 'r')
-                local serverKeys = textutils.unserialize(file.readAll())
-                file.close()
-                if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
-                    if arg4['packet']['type'] == 'craft' then
-                        if arg4['message'] == 'Acknowledged.' then
-                            if remote.craftRequests[arg4['packet']['timestamp']] ~= nil then
-                                -- acknowledged = True
-                                gui.log('Sent crafting request for one '..remote.craftRequests[arg4['packet']['timestamp']]['displayName'], remote.selectDrive())
-                                table.remove(remote.craftRequests, arg4['packet']['timestamp'])
+                if arg4['verify'] ~= nil then
+                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local serverKeys = textutils.unserialize(file.readAll())
+                    file.close()
+                    if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
+                        if arg4['packet']['type'] == 'craft' then
+                            if arg4['message'] == 'Acknowledged.' then
+                                if remote.craftRequests[arg4['packet']['timestamp']] ~= nil then
+                                    -- acknowledged = True
+                                    gui.log('Sent crafting request for one '..remote.craftRequests[arg4['packet']['timestamp']]['displayName'], remote.selectDrive())
+                                    table.remove(remote.craftRequests, arg4['packet']['timestamp'])
+                                end
                             end
                         end
                     end

@@ -140,55 +140,59 @@ end
 function server.checkMessages(event, side, channel, replyChannel, message, distance)
   if event == 'modem_message' then
     if (channel == 14) then
-      if (message['handshake'] == true) then
+      if message['verify'] ~= nil then
+        if (message['handshake'] == true) then
+          local file = fs.open('./AE2_Interface/clients', 'r')
+          local clients = textutils.unserialize(file.readAll())
+          file.close()
+          for _, i in pairs(clients) do
+            if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
+              server.modem.transmit(14, 0, {['message'] = 'Welcome back '..'ID:'..message['verify']['id']..' '..message['verify']['label']..'.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'handshake', ['success'] = true}})
+              server.write('Successful handshake with '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+              return true
+            end
+          end
+          table.insert(clients, message['verify'])
+          local file = fs.open('./AE2_Interface/clients', 'w')
+          file.write(textutils.serialize(clients))
+          file.close()
+          server.modem.transmit(14, 0, {['message'] = 'You have been added to the list of clients.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'handshake', ['success'] = true}})
+          server.write('Successful handshake with '..message['verify']['label']..' (ID: '..message['verify']['id']..')')
+          return true 
+        end
+      end
+    elseif channel == 21 then
+      if message['verify'] ~= nil then
         local file = fs.open('./AE2_Interface/clients', 'r')
         local clients = textutils.unserialize(file.readAll())
         file.close()
         for _, i in pairs(clients) do
           if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
-            server.modem.transmit(14, 0, {['message'] = 'Welcome back '..'ID:'..message['verify']['id']..' '..message['verify']['label']..'.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'handshake', ['success'] = true}})
-            server.write('Successful handshake with '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
-            return true
-          end
-        end
-        table.insert(clients, message['verify'])
-        local file = fs.open('./AE2_Interface/clients', 'w')
-        file.write(textutils.serialize(clients))
-        file.close()
-        server.modem.transmit(14, 0, {['message'] = 'You have been added to the list of clients.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'handshake', ['success'] = true}})
-        server.write('Successful handshake with '..message['verify']['label']..' (ID: '..message['verify']['id']..')')
-        return true 
-      end
-    elseif channel == 21 then
-      local file = fs.open('./AE2_Interface/clients', 'r')
-      local clients = textutils.unserialize(file.readAll())
-      file.close()
-      for _, i in pairs(clients) do
-        if (message['verify']['id'] == i['id']) and (message['verify']['label'] == i['label']) then
-          if message['message'] == 'latestSnapshot' then
-            server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = textutils.serialize(server.snapshot, {['allow_repetitions'] = true })}})
-            server.write('Sent snapshot packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
-          elseif message['message'] == 'allData' then
-            server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.snapshotItems}})
-            -- server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
-          elseif message['message'] == 'keys' then
-            server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
-            server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
-          elseif message['message'] == 'craft' then
-            if server.craftRequests[message['packet']['timestamp']] ~= nil then
-              server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = False, ['timestamp'] = message['packet']['timestamp']}})
+            if message['message'] == 'latestSnapshot' then
+              server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = textutils.serialize(server.snapshot, {['allow_repetitions'] = true })}})
+              server.write('Sent snapshot packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+            elseif message['message'] == 'allData' then
+              server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.snapshotItems}})
+              -- server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+            elseif message['message'] == 'keys' then
+              server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
+              server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
+            elseif message['message'] == 'craft' then
+              if server.craftRequests[message['packet']['timestamp']] ~= nil then
+                server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = False, ['timestamp'] = message['packet']['timestamp']}})
+              else
+                server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
+                server.craftRequests[message['packet']['timestamp']] = message['packet']['data']
+                server.write('Crafting request from ID: '..message['verify']['id']..' '..message['verify']['label']..' for one '..message['packet']['data']['displayName'])
+              end
             else
-              server.modem.transmit(28, 0, {['message'] = 'Acknowledged.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = server.bridge.craftItem(message['packet']['data']), ['timestamp'] = message['packet']['timestamp']}})
-              server.craftRequests[message['packet']['timestamp']] = message['packet']['data']
-              server.write('Crafting request from ID: '..message['verify']['id']..' '..message['verify']['label']..' for one '..message['packet']['data']['displayName'])
+              -- gui.log('Unknown request from '..message['verify']['id'])
+            server.write('Unknown request from '..message['verify']['id'])
             end
           else
-            -- gui.log('Unknown request from '..message['verify']['id'])
-           server.write('Unknown request from '..message['verify']['id'])
+            -- gui.log('Unauthorized client request.')
+            -- server.write('Unauthorized client request.')
           end
-        else
-          -- gui.log('Unauthorized client request.')
-          -- server.write('Unauthorized client request.')
         end
       end
     end
@@ -377,8 +381,10 @@ function server.initialize()
     file.close()
   end
   if not fs.exists('./AE2_Interface/server.keys') then
+    local info = server.getComputerInfo()
+    info['key'] = os.clock()/7
     local file = fs.open('./AE2_Interface/server.keys', 'w')
-    file.write(textutils.serialize(server.getComputerInfo()))
+    file.write(textutils.serialize(info))
     file.close()
   else
     local file = fs.open('./AE2_Interface/server.keys', 'r')
