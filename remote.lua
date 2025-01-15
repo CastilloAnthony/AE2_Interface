@@ -229,6 +229,7 @@ function remote.eventHandler()
                     if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
                         if arg4['packet']['type'] == 'newDataAvailable' then
                             remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
+                            remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
                         end
                     end
                 end
@@ -250,7 +251,8 @@ function remote.eventHandler()
                             remote.data = textutils.unserialize(arg4['packet']['data'])
                             gui.log('Snapshot Updated!', remote.selectDrive())
                         elseif arg4['packet']['type'] == 'allData' then
-                            remote.allData = arg4['packet']['data']
+                            remote.allData = textutils.unserialize(arg4['packet']['data'])
+                            -- gui.log('Items Updated!', remote.selectDrive())
                         end
                     end
                 end
@@ -324,6 +326,7 @@ function remote.initialize()
     remote.monitor = remote.checkForMonitor()
     remote.initializeMonitor()
     remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
+    remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
     --gui.initialize(term)
     -- remote.getPackets()
     -- gui.main(remote.data, remote.allData)

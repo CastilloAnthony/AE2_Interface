@@ -59,8 +59,12 @@ function gui.log(string, storage)
 end --end log
 
 function gui.main(data, allData)
-    if data == nil or allData == nil then
-        gui.log('No data was given.', nil)
+    if data == nil then
+        gui.log('Missing snapshot data.', nil)
+        os.sleep(1)
+        return
+    elseif allData == nil then
+        gui.log('Missing item data.', nil)
         os.sleep(1)
         return
     end

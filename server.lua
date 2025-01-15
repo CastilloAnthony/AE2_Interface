@@ -185,7 +185,7 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
               server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'latestSnapshot', ['data'] = textutils.serialize(server.snapshot, {['allow_repetitions'] = true })}})
               server.write('Sent snapshot packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
             elseif message['message'] == 'allData' then
-              server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.snapshotItems}})
+              server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = textutils.serialize(server.snapshotItems, {['allow_repetitions'] = true })}})
               -- server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
             elseif message['message'] == 'keys' then
               local file = fs.open('./AE2_Interface/server.keys', 'r')
