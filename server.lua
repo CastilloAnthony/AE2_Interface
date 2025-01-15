@@ -391,8 +391,10 @@ function server.initialize()
     temp = textutils.unserialize(file.readAll())
     file.close()
     if not temp['id'] == initial['computerInfo']['id'] and not temp['label'] == initial['computerInfo']['label'] then
+      local info = server.getComputerInfo()
+      info['key'] = os.clock()/7
       local file = fs.open('./AE2_Interface/server.keys', 'w')
-      file.write(textutils.serialize(server.getComputerInfo()))
+      file.write(textutils.serialize(info))
       file.close()
     end
   end
