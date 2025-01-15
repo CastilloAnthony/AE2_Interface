@@ -31,3 +31,4 @@ end
 
 shell.run('rm /startup')
 shell.run('wget https://raw.githubusercontent.com/CastilloAnthony/AE2_Interface/main/startup /startup')
+shell.run('reboot')
