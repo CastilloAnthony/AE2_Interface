@@ -175,7 +175,10 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
               server.modem.transmit(28, 0, {['message'] = 'Enjoy!', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'allData', ['data'] = server.snapshotItems}})
               -- server.write('Sent items info packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
             elseif message['message'] == 'keys' then
-              server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = server.getComputerInfo()}})
+              local file = fs.open('./AE2_Interface/server.keys', 'r')
+              local keys = textutils.unserialize(file.readAll())
+              file.close()
+              server.modem.transmit(28, 0, {['message'] = 'Access Granted.', ['verify'] = server.getComputerInfo(), ['packet'] = {['type'] = 'keys', ['data'] = keys}})
               server.write('Sent keys packet to '..'ID:'..message['verify']['id']..' '..message['verify']['label'])
             elseif message['message'] == 'craft' then
               if server.craftRequests[message['packet']['timestamp']] ~= nil then
@@ -315,6 +318,7 @@ function server.generateSnapshots() -- Run in Parallel
       server.broadcastDataAvailable()
       coroutine.yield()
       server.checkDriveStorage()
+      coroutine.yield()
     end
     server.checkCraftingQueue()
     coroutine.yield()
@@ -351,9 +355,12 @@ function server.main() -- Run in Parallel
 end --end main
 
 function server.guiTime() -- Run in Parallel
+  server.snapshot = server.gatherData()
+  server.snapshotItems = server.getAllItemsInfo()
   while true do
+    gui.main(server.snapshot, server.snapshotItems)
     gui.updateTime()
-    os.sleep(0.5)
+    os.sleep(1/60)
   end
 end --end guiTime
 
@@ -380,7 +387,7 @@ function server.initialize()
     file.write(textutils.serialize({server.getComputerInfo()}))
     file.close()
   end
-  if not fs.exists('./AE2_Interface/server.keys') then
+  if not fs.exists('./AE2_Interface/server.keys') then -- Consider Implementing a Private/public key combination
     local info = server.getComputerInfo()
     info['key'] = os.clock()/7
     local file = fs.open('./AE2_Interface/server.keys', 'w')
@@ -388,13 +395,11 @@ function server.initialize()
     file.close()
   else
     local file = fs.open('./AE2_Interface/server.keys', 'r')
-    temp = textutils.unserialize(file.readAll())
+    local temp = textutils.unserialize(file.readAll())
     file.close()
     if not temp['id'] == initial['computerInfo']['id'] and not temp['label'] == initial['computerInfo']['label'] then
-      local info = server.getComputerInfo()
-      info['key'] = os.clock()/7
       local file = fs.open('./AE2_Interface/server.keys', 'w')
-      file.write(textutils.serialize(info))
+      file.write(textutils.serialize(server.getComputerInfo()))
       file.close()
     end
   end
@@ -403,7 +408,7 @@ function server.initialize()
   server.modem = initial['modem']
   server.initializeMonitor(monitor)
   server.initializeNetwork(modem)
-  parallel.waitForAny(server.guiTime, server.main, server.generateSnapshots, server.eventHandler)-- , server.buttonHandler) --server.touchscreenHandler, 
+  parallel.waitForAny(server.guiTime, server.generateSnapshots, server.eventHandler)-- , server.buttonHandler) --server.touchscreenHandler, server.main, 
 end --end initialize
 
 return server

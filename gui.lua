@@ -100,18 +100,27 @@ function gui.sortLogElements(a, b)
     return tonumber(a['order']) > tonumber(b['order'])
 end --end sorLogElements
 
-function gui.compareByAmount(a, b)
-    return tonumber(a['amount']) > tonumber(b['amount'])
-end --end compareByAmount
+function gui.compareItems(a, b)
+    if tonumber(a['amount']) ~= tonumber(b['amount']) then
+        return tonumber(a['amount']) > tonumber(b['amount'])
+    else
+        return a['name'] < b['name']
+    end
+end --end compareItems
 
-function gui.compareByBytes(a, b)
-    return tonumber(a['totalBytes']) > tonumber(b['totalBytes'])
-end --end compareByBytes
+function gui.compareCells(a, b)
+    if tonumber(a['totalBytes']) > tonumber(b['totalBytes']) then
+        return tonumber(a['totalBytes']) > tonumber(b['totalBytes'])
+    else
+        return a['cellType'] < b['cellType']
+    end
+end --end compareCells
 
 function gui.populateTable(allData)
     if gui.userSearch ~= gui.settings['userSearch'] then
         if gui.userSearch == '' then
-            gui.userSearch = gui.settings['userSearch']
+            gui.settings['userSearch'] = gui.userSearch
+            gui.writeSettings()
         else
             gui.settings['userSearch'] = gui.userSearch
             gui.writeSettings()
@@ -123,15 +132,49 @@ function gui.populateTable(allData)
         end
         if gui.userSearch ~= nil then
             for _, i in pairs(allData) do
-                if string.find(string.lower(i['displayName']), gui.userSearch) ~= nil then
-                    if string.find(string.lower(i['displayName']), gui.userSearch) == 1 then
-                        if not gui.checkIfInTable(gui.userSearchTable, i) then
-                            table.insert(gui.userSearchTable, i)
+                if #gui.userSearchTable >= gui.height-7 then
+                    break
+                end
+                if string.sub(gui.userSearch, 1, 1) == '@' then -- Searching via mod
+                    if i['nbt']['id'] ~= nil then
+                        for j=1, #i['nbt']['id'] do
+                            if string.find(string.lower(string.sub(i['nbt']['id'], j, #i['nbt']['id'])), string.sub(gui.userSearch, 2, #gui.userSearch)) ~= nil then
+                                if string.find(string.lower(string.sub(i['nbt']['id'], j, #i['nbt']['id'])), string.sub(gui.userSearch, 2, #gui.userSearch)) == 1 then
+                                    if not gui.checkIfInTable(gui.userSearchTable, i) then
+                                        table.insert(gui.userSearchTable, i)
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                elseif string.sub(gui.userSearch, 1, 1) == '$' then -- Searching via tags
+                    for _, j in pairs(i['tags']) do
+                        for k=1, #j do
+                            if string.find(string.lower(string.sub(j, k, #j)), string.sub(gui.userSearch, 2, #gui.userSearch)) ~= nil then
+                                if string.find(string.lower(string.sub(j, k, #j)), string.sub(gui.userSearch, 2, #gui.userSearch)) == 1 then
+                                    if not gui.checkIfInTable(gui.userSearchTable, i) then
+                                        table.insert(gui.userSearchTable, i)
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+                else -- Searching via name
+                    for j=1, #i['displayName'] do
+                        if string.find(string.lower(string.sub(i['displayName'], j, #i['displayName'])), gui.userSearch) ~= nil then
+                            if string.find(string.lower(string.sub(i['displayName'], j, #i['displayName'])), gui.userSearch) == 1 then
+                                if not gui.checkIfInTable(gui.userSearchTable, i) then
+                                    table.insert(gui.userSearchTable, i)
+                                    break
+                                end
+                            end
                         end
                     end
                 end
             end
-            table.sort(gui.userSearchTable, gui.compareByAmount)
+            table.sort(gui.userSearchTable, gui.compareItems)
         end
     end
 end --end populateTable
@@ -542,7 +585,7 @@ function gui.page3(itemsInfo, allData) -- Items
     gui.monitor.write('Item')
     gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
     gui.monitor.write('Quantity')
-    table.sort(allData, gui.compareByAmount)
+    table.sort(allData, gui.compareItems)
     if gui.settings['itemsMouseWheel']+gui.height-13 > #allData then -- Looking at the bottom of the list
         for i=1, gui.height-13 do
             if i > #allData then
@@ -577,7 +620,7 @@ function gui.page4(fluidInfo) -- Fluids
         gui.monitor.setCursorPos(2, 3)
         gui.monitor.write('No fluid information found.')
     elseif #fluidInfo['listFluid'] >= 1 then
-        table.sort(fluidInfo['listFluid'], gui.compareByAmount)
+        table.sort(fluidInfo['listFluid'], gui.compareItems)
         gui.monitor.setCursorPos(2,3)
         gui.monitor.setTextColor(colors.lightBlue)
         gui.monitor.write('Fluids:')
@@ -613,6 +656,7 @@ function gui.page4(fluidInfo) -- Fluids
         gui.monitor.write('Fluid')
         gui.monitor.setCursorPos(gui.width*gui.widthFactor,10)
         gui.monitor.write('mBuckets')
+        table.sort(fluidInfo['listFluid'], gui.compareItems)
         for i, j in pairs(fluidInfo['listFluid']) do
             if i > gui.height-14 then
                 break
@@ -691,6 +735,7 @@ end --end page5
 -- end --end page6
 
 function gui.page6(craftables) -- Craftable Items
+    table.sort(craftables, gui.compareItems)
     gui.clearScreen()
     gui.monitor.setTextColor(colors.yellow)
     gui.monitor.setCursorPos(2, 3)
@@ -719,7 +764,7 @@ function gui.page7(cellsInfo) -- Cells
         gui.monitor.write('Type'..'  '..'Name')
         gui.monitor.setCursorPos(gui.width*gui.widthFactor, 3)
         gui.monitor.write('MaxBytes')
-        table.sort(cellsInfo, gui.compareByBytes)
+        table.sort(cellsInfo, gui.compareCells)
         for i, j in pairs(cellsInfo) do
             local space = '  '
             if i > gui.height-6 then

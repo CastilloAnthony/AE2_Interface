@@ -162,7 +162,7 @@ function remote.requestServerKeys()
                 if message['verify'] ~= nil then
                     if message['packet']['type'] == 'keys' then
                         if (message['verify']['id'] == message['packet']['data']['id']) and (message['verify']['label'] == message['packet']['data']['label']) then
-                            local file = fs.open('./AE2_Interface/server.key', 'w')
+                            local file = fs.open('./AE2_Interface/server.keys', 'w')
                             file.write(textutils.serialize(message['packet']['data']))
                             file.close()
                             -- remote.write('Keys retrieved from: '..message['verify']['label'])
@@ -195,7 +195,7 @@ function remote.latestData() -- Retrieves the latest snapshot from the server
         if (event == 'modem_message') then
             if (channel == 28) then
                 if message['verify'] ~= nil then
-                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local file = fs.open('./AE2_Interface/server.keys', 'r')
                     local serverKeys = textutils.unserialize(file.readAll())
                     file.close()
                     if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
@@ -226,7 +226,7 @@ function remote.requestAllData()
         end
         if (event == 'modem_message') then
             if (channel == 28) then
-                local file = fs.open('./AE2_Interface/server.key', 'r')
+                local file = fs.open('./AE2_Interface/server.keys', 'r')
                 local serverKeys = textutils.unserialize(file.readAll())
                 file.close()
                 if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
@@ -296,27 +296,27 @@ function remote.eventHandler()
             -- coroutine.yield()
         elseif event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
-            gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
+            -- gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         elseif event == 'mouse_wheel' then
             gui.mouseWheel(event, arg1, arg2, arg3)
-            gui.main(remote.data, remote.allData)
+            -- gui.main(remote.data, remote.allData)
         elseif event == 'modem_message' then
             if arg2 == 7 then
                 if arg4['verify'] ~= nil then
-                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local file = fs.open('./AE2_Interface/server.keys', 'r')
                     local serverKeys = textutils.unserialize(file.readAll())
                     file.close()
                     if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
                         if arg4['packet']['type'] == 'newDataAvailable' then
                             remote.getPackets()
-                            gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
+                            -- gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
                             --timerID = os.startTimer(16)
                         end
                     end
                 end
             elseif arg2 == 28 then
                 if arg4['verify'] ~= nil then
-                    local file = fs.open('./AE2_Interface/server.key', 'r')
+                    local file = fs.open('./AE2_Interface/server.keys', 'r')
                     local serverKeys = textutils.unserialize(file.readAll())
                     file.close()
                     if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
@@ -333,6 +333,7 @@ function remote.eventHandler()
                 end
             end
         else
+            timer = nil
             -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5) -- Causes multishell issue and periodic freezing of normal timeclock
         end
         -- if acknowledged ~= nil then
@@ -349,7 +350,8 @@ function remote.guiTime()
     --remote.getPackets()
     while true do
         gui.updateTime()
-        os.sleep(0.5)
+        gui.main(remote.data, remote.allData)
+        os.sleep(1/60)
     end
 end
 
