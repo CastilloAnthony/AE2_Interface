@@ -23,6 +23,15 @@ function remote.write(text)
     term.setCursorPos(1, y)
 end --end write
 
+function remote.checkIfKeyInTable(table, key)
+    for _, i in pairs(table) do
+        if i == key then
+            return true
+        end
+    end
+    return false
+end
+
 function remote.findDrives()
     for _, i in pairs(peripheral.getNames()) do
         if string.find(peripheral.getType(i), 'drive') then
@@ -50,33 +59,14 @@ function remote.selectDrive()
                 gui.log('Logs: '..remote.currDrive)
                 return peripheral.wrap(i).getMountPath()..'/'
             else
-                if remote.fullStorages[i] == nil then
-                    remote.fullStorages[i] = i
+                if remote.checkIfKeyInTable(remote.fullStorages, i) == flase then
+                    table.insert(remote.fullStorages, i)
                 end
             end
         end
     end
     return './'
 end --end selectDrive
-
-function remote.checkDriveStorage()
-    for _, i in pairs(remote.fullStorages) do
-        if peripheral.wrap(i).isDiskPresent() then
-            if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
-                remote.fullStorages[i] = nil
-            else
-                gui.log(i..' is full.', remote.selectDrive())
-            end
-        end
-    end
-end --end checkDriveStorage
-
-function remote.readData()
-    local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
-    local contents = file.readAll()
-    file.close()
-    return textutils.unserialize(contents)
-end --end readData
 
 function remote.checkForWirelessModem()
     for _, i in pairs(peripheral.getNames()) do
@@ -179,70 +169,6 @@ function remote.requestServerKeys()
     end
 end --end requestServerKeys
 
-function remote.latestData() -- Retrieves the latest snapshot from the server
-    while true do
-        local timerID = os.startTimer(0.05)
-        local event, side, channel, replyChannel, message, distance
-        while true do
-            remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
-            event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
-            if event == 'modem_message' then
-                break
-            elseif (event == 'timer') and (side == timerID) then
-                return remote.latestData()
-            end
-        end
-        if (event == 'modem_message') then
-            if (channel == 28) then
-                if message['verify'] ~= nil then
-                    local file = fs.open('./AE2_Interface/server.keys', 'r')
-                    local serverKeys = textutils.unserialize(file.readAll())
-                    file.close()
-                    if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
-                        if message['packet']['type'] == 'latestSnapshot' then
-                            return textutils.unserialize(message['packet']['data'])
-                        end
-                    end
-                end
-            end
-        -- else
-        --     os.queueEvent(event, side, channel, replyChannel, message, distance)
-        end
-        os.sleep(1/60)
-    end
-end --end retrieveData
-
-function remote.requestAllData()
-    while true do
-        local timerID = os.startTimer(0.05)
-        local even, side, channel, replyChannel, message, distance
-        while true do
-            remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
-            event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
-            if event == 'modem_message' then
-                break
-            elseif (event == 'timer') and (side == timerID) then
-                return remote.requestAllData()
-            end
-        end
-        if (event == 'modem_message') then
-            if (channel == 28) then
-                local file = fs.open('./AE2_Interface/server.keys', 'r')
-                local serverKeys = textutils.unserialize(file.readAll())
-                file.close()
-                if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
-                    if message['packet']['type'] == 'allData' then
-                        return message['packet']['data']
-                    end
-                end
-            end
-        -- else
-        --     os.queueEvent(event, side, channel, replyChannel, message, distance)
-        end
-        os.sleep(1/60)
-    end
-end --end requestAllData
-
 function remote.initializeNetwork()
     --['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}
     if not remote.modem.isOpen(7) then
@@ -259,15 +185,6 @@ end --end initializeNetwork
 function remote.getComputerInfo()
     return {['id'] = os.computerID(), ['label'] = os.computerLabel()}
 end --end getComputerInfo
-
-function remote.getPackets() -- Infinite Looping here
-    remote.gettingData = true
-    -- gui.log('Requesting data...', remote.selectDrive())
-    remote.data = remote.latestData()
-    remote.allData = remote.requestAllData()
-    gui.log('Snapshot Updated!', remote.selectDrive())
-    remote.gettingData = false
-end
 
 function remote.eventHandler()
     --local timerID = os.startTimer(0.5)
@@ -291,18 +208,19 @@ function remote.eventHandler()
                 remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = v, ['timestamp'] = k}})
             end
         end
-        local timer = os.startTimer(0.5)
+        -- local timer = os.startTimer(0.5)
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
-        if event == 'timer' then
-            timer = nil
+        -- if event == 'timer' then
+        --     timer = nil
             -- coroutine.yield()
-        elseif event == 'mouse_up' or event == 'monitor_touch' then
+        if event == 'mouse_up' or event == 'monitor_touch' then
             gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
             -- gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
         elseif event == 'mouse_wheel' then
             gui.mouseWheel(event, arg1, arg2, arg3)
             -- gui.main(remote.data, remote.allData)
         elseif event == 'modem_message' then
+            -- remote.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
             if arg2 == 7 then
                 if arg4['verify'] ~= nil then
                     local file = fs.open('./AE2_Interface/server.keys', 'r')
@@ -310,9 +228,7 @@ function remote.eventHandler()
                     file.close()
                     if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
                         if arg4['packet']['type'] == 'newDataAvailable' then
-                            remote.getPackets()
-                            -- gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
-                            --timerID = os.startTimer(16)
+                            remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
                         end
                     end
                 end
@@ -330,12 +246,17 @@ function remote.eventHandler()
                                     table.remove(remote.craftRequests, arg4['packet']['timestamp'])
                                 end
                             end
+                        elseif arg4['packet']['type'] == 'latestSnapshot' then
+                            remote.data = textutils.unserialize(arg4['packet']['data'])
+                            gui.log('Snapshot Updated!', remote.selectDrive())
+                        elseif arg4['packet']['type'] == 'allData' then
+                            remote.allData = arg4['packet']['data']
                         end
                     end
                 end
             end
-        else
-            timer = nil
+        -- else
+            -- timer = nil
             -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5) -- Causes multishell issue and periodic freezing of normal timeclock
         end
         -- if acknowledged ~= nil then
@@ -402,11 +323,107 @@ function remote.initialize()
     end
     remote.monitor = remote.checkForMonitor()
     remote.initializeMonitor()
+    remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
     --gui.initialize(term)
-    remote.getPackets()
-    gui.main(remote.data, remote.allData)
-    parallel.waitForAny(remote.guiTime, remote.eventHandler)--, remote.checkCraftingQueue)--, remote.mainLoop)
+    -- remote.getPackets()
+    -- gui.main(remote.data, remote.allData)
+    parallel.waitForAny(remote.eventHandler, remote.guiTime)--, remote.checkCraftingQueue)--, remote.mainLoop)
     -- remote.eventHandler()
 end --end initialize
 
 return remote
+
+-- Deprecated Below --
+
+
+-- function remote.checkDriveStorage()
+--     for _, i in pairs(remote.fullStorages) do
+--         if peripheral.wrap(i).isDiskPresent() then
+--             if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
+--                 remote.fullStorages[i] = nil
+--             else
+--                 gui.log(i..' is full.', remote.selectDrive())
+--             end
+--         end
+--     end
+-- end --end checkDriveStorage
+
+-- function remote.readData()
+--     local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
+--     local contents = file.readAll()
+--     file.close()
+--     return textutils.unserialize(contents)
+-- end --end readData
+
+-- function remote.latestData() -- Retrieves the latest snapshot from the server
+--     while true do
+--         local timerID = os.startTimer(0.05)
+--         local event, side, channel, replyChannel, message, distance
+--         while true do
+--             remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
+--             event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
+--             if event == 'modem_message' then
+--                 break
+--             elseif (event == 'timer') and (side == timerID) then
+--                 return remote.latestData()
+--             end
+--         end
+--         if (event == 'modem_message') then
+--             if (channel == 28) then
+--                 if message['verify'] ~= nil then
+--                     local file = fs.open('./AE2_Interface/server.keys', 'r')
+--                     local serverKeys = textutils.unserialize(file.readAll())
+--                     file.close()
+--                     if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
+--                         if message['packet']['type'] == 'latestSnapshot' then
+--                             return textutils.unserialize(message['packet']['data'])
+--                         end
+--                     end
+--                 end
+--             end
+--         -- else
+--         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
+--         end
+--         os.sleep(1/60)
+--     end
+-- end --end retrieveData
+
+-- function remote.requestAllData()
+--     while true do
+--         local timerID = os.startTimer(0.05)
+--         local even, side, channel, replyChannel, message, distance
+--         while true do
+--             remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
+--             event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
+--             if event == 'modem_message' then
+--                 break
+--             elseif (event == 'timer') and (side == timerID) then
+--                 return remote.requestAllData()
+--             end
+--         end
+--         if (event == 'modem_message') then
+--             if (channel == 28) then
+--                 local file = fs.open('./AE2_Interface/server.keys', 'r')
+--                 local serverKeys = textutils.unserialize(file.readAll())
+--                 file.close()
+--                 if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
+--                     if message['packet']['type'] == 'allData' then
+--                         return message['packet']['data']
+--                     end
+--                 end
+--             end
+--         -- else
+--         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
+--         end
+--         os.sleep(1/60)
+--     end
+-- end --end requestAllData
+
+-- function remote.getPackets() -- Infinite Looping here
+--     remote.gettingData = true
+--     -- gui.log('Requesting data...', remote.selectDrive())
+--     remote.data = remote.latestData()
+--     remote.allData = remote.requestAllData()
+--     gui.log('Snapshot Updated!', remote.selectDrive())
+--     remote.gettingData = false
+-- end

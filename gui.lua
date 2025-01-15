@@ -61,6 +61,7 @@ end --end log
 function gui.main(data, allData)
     if data == nil or allData == nil then
         gui.log('No data was given.', nil)
+        os.sleep(1)
         return
     end
     --timeInfo, itemsInfo, energyInfo, allData, fluidInfo, cellsInfo, cpuInfo, serverInfo, craftables
