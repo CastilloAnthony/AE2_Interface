@@ -333,12 +333,15 @@ function server.generateSnapshots() -- Run in Parallel
 end --end generateSnapshots
 
 function server.eventHandler() -- Run in Parallel
-  os.sleep(1)
+  while server.snapshot == nil or server.snapshotItems == nil do
+    os.sleep(1/60)
+  end
+  local timer = os.startTimer(0)
   while true do
-    local timer = os.startTimer(100)
     local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
     if event == 'timer' then
-      timer = nil
+      server.broadcast()
+      timer = os.startTimer(60*5)
     elseif event == 'modem_message' then
       server.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
     elseif event == 'mouse_up' or event == 'monitor_touch' then
