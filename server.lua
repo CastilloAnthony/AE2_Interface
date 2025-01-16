@@ -76,7 +76,7 @@ function server.checkDriveStorage()
       if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
         server.fullStorages[i] = nil
       else
-        gui.log(i..' is full.', server.selectDrive())
+        gui.log(peripheral.wrap(i).getMountPath()..' is full.', server.selectDrive())
       end
     end
   end
@@ -306,8 +306,12 @@ function server.gatherData()
     gui.log('Encountered an error while reading data. (Was the AE network down?)', server.selectDrive())
     gui.updateLogPage()
     while data == nil do
+      gui.log('Failed to generate snapshot, dumping to file.', server.selectDrive())
+      local file = fs.open('snapshot.dump', 'w')
+      file.write(textutils.serialize(data))
+      file.close()
       data = {['time'] = server.getTimeInfo(), ['computer'] = server.getComputerInfo(), ['items'] = server.getItemStorageInfo(), ['energy'] = server.getEnergyInfo(), ['fluids'] = server.getFluidsInfo(), ['cells'] = server.getCellsInfo(), ['cpus'] = server.getCPUInfo(), ['craftables'] = server.bridge.listCraftableItems()}
-      os.sleep(0)
+      os.sleep(1)
     end
   end
   return data
@@ -328,7 +332,7 @@ function server.generateSnapshots() -- Run in Parallel
     end
     server.checkCraftingQueue()
     coroutine.yield()
-    os.sleep(0)
+    os.sleep(1/60)
   end
 end --end generateSnapshots
 

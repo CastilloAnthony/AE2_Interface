@@ -68,6 +68,18 @@ function remote.selectDrive()
     return './'
 end --end selectDrive
 
+function remote.checkDriveStorage()
+    for _, i in pairs(remote.fullStorages) do
+        if peripheral.wrap(i).isDiskPresent() then
+            if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
+                remote.fullStorages[i] = nil
+            else
+                gui.log(peripheral.wrap(i).getMountPath()..' is full.', remote.selectDrive())
+            end
+        end
+    end
+end --end checkDriveStorage
+
 function remote.checkForWirelessModem()
     for _, i in pairs(peripheral.getNames()) do
         if (peripheral.getType(i) == 'modem') then
@@ -227,9 +239,11 @@ function remote.eventHandler()
                     local serverKeys = textutils.unserialize(file.readAll())
                     file.close()
                     if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
-                        if arg4['packet']['type'] == 'newDataAvailable' then
-                            remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
-                            remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
+                        if arg4['packet'] ~= nil then
+                            if arg4['packet']['type'] == 'newDataAvailable' then
+                                remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
+                                remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
+                            end
                         end
                     end
                 end
@@ -350,18 +364,6 @@ return remote
 
 -- Deprecated Below --
 
-
--- function remote.checkDriveStorage()
---     for _, i in pairs(remote.fullStorages) do
---         if peripheral.wrap(i).isDiskPresent() then
---             if fs.getFreeSpace(peripheral.wrap(i).getMountPath()) > 500 then
---                 remote.fullStorages[i] = nil
---             else
---                 gui.log(i..' is full.', remote.selectDrive())
---             end
---         end
---     end
--- end --end checkDriveStorage
 
 -- function remote.readData()
 --     local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
