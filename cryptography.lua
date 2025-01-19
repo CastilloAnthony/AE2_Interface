@@ -120,10 +120,10 @@ function crypt.generateSharedKey(private, public, p)
 end --end generateSharedKey
 
 function crypt.encrypt(sharedKey, payload)
+    local payloadLength = #payload
     local encryption = {}
-    for i = 1, #payload do
-        local encrypted_value = sharedKey * string.byte(payload, i)
-        table.insert(encryption, tostring(encrypted_value))
+    for i = 1, payloadLength do
+        encryption[i] = sharedKey * string.byte(payload, i)
     end
     return table.concat(encryption, ' ')
 end --end encrypt
@@ -131,8 +131,7 @@ end --end encrypt
 function crypt.decrypt(sharedKey, payload)
     local decryption = {}
     for chunk in string.gmatch(payload, "%S+") do
-        local decrypted_char = tonumber(chunk) / sharedKey
-        table.insert(decryption, string.char(decrypted_char))
+        decryption[#decryption + 1] = string.char(tonumber(chunk) / sharedKey)
     end
     return table.concat(decryption)
 end --end decrypt
