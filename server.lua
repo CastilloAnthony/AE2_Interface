@@ -33,8 +33,6 @@ function server.findDrives()
   for _, i in pairs(peripheral.getNames()) do
     if string.find(peripheral.getType(i), 'drive') then
       table.insert(server.storages, i)
-      -- server.storages[#server.storages] = i
-      -- server.fullStorages[i] = nil
     end
   end
 end --end findDrives
@@ -186,9 +184,6 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
               local params = textutils.unserialize(file.readAll())
               file.close()
               local privateKey, publicKey = crypt.generatePrivatePublicKeys(params['p'], params['g'], 100, 1000)
-              -- local file = fs.open('temp', 'w')
-              -- file.write(textutils.serialize({['privateKey'] = privateKey, ['publicKey'] = publicKey}))
-              -- file.close()
               server.clients[message['verify']['id']] = {['id'] = message['verify']['id'], ['label'] = message['verify']['label'], ['privateKey'] = privateKey, ['publicKey'] = publicKey, ['p'] = params['p']}
               server.writeClients()
               server.modem.transmit(14, 0, {['message'] = 'Parameters are available', ['verify'] = server.getComputerInfo(), ['target'] = message['verify'], ['handshake'] = true, ['packet'] = {['result'] = true, ['parameters'] = true, ['p'] = params['p'], ['g'] = params['g'], ['publicKey'] = publicKey}})
@@ -196,17 +191,11 @@ function server.checkMessages(event, side, channel, replyChannel, message, dista
             end
           else
             server.readClients()
-            gui.log(textutils.serialize(server.clients))
             for id, i in pairs(server.clients) do -- First search for already known client-key combos
-              -- print(id..' '..textutils.serialize(i))
               if id == message['verify']['id'] and message['verify']['label'] == i['label'] then
                 if i['sharedKey'] == nil then
                   if message['packet']['publicKey'] ~= nil then
-                    gui.log(server.clients[id]['privateKey'])
-                    gui.log(i['privateKey'])
-                    gui.log(server.clients[id]['publicKey'])
                     server.clients[id]['sharedKey'] = crypt.generateSharedKey(i['privateKey'], message['packet']['publicKey'], i['p'])
-                    gui.log(server.clients[id]['sharedKey'])
                     server.clients[id]['privateKey'] = nil
                     server.clients[id]['publicKey'] = nil
                     server.clients[id]['p'] = nil
