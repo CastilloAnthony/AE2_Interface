@@ -1,5 +1,10 @@
+--[[
+  Developed by Anthony Castillo 6/27/2023
+  (WIP)  
+]]--
 
 local gui = require('gui')
+local crypt = require('cryptography')
 
 local remote = {}
 
@@ -9,6 +14,7 @@ remote.data = nil
 remote.allData = nil
 remote.gettingData = false
 remote.currDrive = nil
+remote.keys = {}
 remote.storages = {}
 remote.fullStorages = {}
 remote.craftRequests = {}
@@ -30,7 +36,7 @@ function remote.checkIfKeyInTable(table, key)
         end
     end
     return false
-end
+end --end checkIfKeyInTable
 
 function remote.findDrives()
     for _, i in pairs(peripheral.getNames()) do
@@ -84,13 +90,10 @@ function remote.checkForWirelessModem()
     for _, i in pairs(peripheral.getNames()) do
         if (peripheral.getType(i) == 'modem') then
             if (peripheral.call(i, 'isWireless')) then
-                --remote.write('Wireless modem found!')
                 return peripheral.wrap(i) 
             end
         end
     end
-    --term.write('Could not find a wireless modem.')
-    --remote.write('Could not find a wireless modem.')
     return false
 end --end checkForWirelessModem
 
@@ -98,7 +101,6 @@ function remote.checkForMonitor()
     for _, i in pairs(peripheral.getNames()) do
         if peripheral.getType(i) == 'monitor' then
             remote.write('Monitor found!')
-            -- return peripheral.wrap(i)
             width, height = peripheral.wrap(i).getSize()
             return window.create(peripheral.wrap(i), 1, 1, width, height)
         end
@@ -115,71 +117,76 @@ function remote.initializeMonitor()
 end --end initializeMonitor
 
 function remote.performHandshake()
-    -- packet = {['message'] = 'This is a message', ['verify'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}} --A standard packet transmission
+    -- packet = {['message'] = 'This is a message', ['verify'] = {['id'] = os.computerID(), ['label'] = os.computerLabel()}, ['target'] = {['id'] = 7, ['label'] = AE2_Server}, ['packet'] = {['data'] = 'Some data.'}} --A standard packet transmission
+    remote.readKeys()
+    local first, second = nil, nil
     local event, side, channel, replyChannel, message, distance
-    local timerID = os.startTimer(0.05)
-    remote.modem.transmit(14, 0, {['handshake'] = true, ['verify'] = remote.getComputerInfo()})
+    local timer = os.startTimer(60)
     while true do
-        event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
+        event, side, channel, replyChannel, message, distance = os.pullEvent()
         if event == 'modem_message' then
-            break
-        elseif (event == 'timer') and (side == timerID) then
-            return false
-        end
-    end
-    if (event == 'modem_message') then
-        if (channel == 7) then
             if message['verify'] ~= nil then
-                return remote.performHandshake()
-            end
-        elseif (channel == 14) then
-            if message['verify'] ~= nil then
-                if string.find(string.lower(message['verify']['label']), 'server') or string.find(string.lower(message['verify']['label']), 'ae') then
-                    if (message['packet']['type'] == 'handshake') then
-                        if message['packet']['success'] == true then
-                            -- remote.write('Handshake with '..message['verify']['label'])
-                            -- remote.write('Msg: '..message['message'])
-                            gui.log('Handshake: '..message['verify']['label'], remote.selectDrive())
-                            gui.log('Msg: '..message['message'], remote.selectDrive())
-                            return true
+                if channel == 7 then
+                    if first ~= true then
+                        if string.find(string.lower(message['verify']['label']), 'ae') then
+                            if message['ports'] ~= nil then
+                                remote.keys['id'] = message['verify']['id']
+                                remote.keys['label'] = message['verify']['label'] 
+                                remote.modem.transmit(14, 0, {['message'] = 'Hello, can I have access?', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['handshake'] = true, })
+                                first = true
+                            elseif message['packet']['type'] ~= nil then
+                                if message['packet']['type'] == 'newDataAvailable' then
+                                    remote.keys['id'] = message['verify']['id']
+                                    remote.keys['label'] = message['verify']['label'] 
+                                    remote.modem.transmit(14, 0, {['message'] = 'Hello, can I have access?', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['handshake'] = true, })
+                                    first = true
+                                end
+                            end
+                        end
+                    end
+                elseif channel == 14 then
+                    if second ~= true then
+                        if message['verify']['label'] == remote.keys['label'] and message['verify']['id'] == remote.keys['id'] then
+                            if message['packet']['parameters'] == true then
+                                local private, public = crypt.generatePrivatePublicKeys(message['packet']['p'], message['packet']['g'], 1000, 10000)
+                                local shared = crypt.generateSharedKey(private, message['packet']['publicKey'], message['packet']['p'])
+                                remote.keys['sharedKey'] = shared
+                                remote.modem.transmit(14, 0, {['message'] = 'Sending public key.', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['handshake'] = true, ['packet'] = {['publicKey'] = public}})
+                                second = true
+                            else
+                                if message['packet']['encryptionTest'] ~= nil then
+                                    if remote.keys['sharedKey'] ~= nil then
+                                        if crypt.decrypt(remote.keys['sharedKey'], message['packet']['encryptionTest']) == 'Valid' then
+                                            return
+                                        else
+                                            remote.modem.transmit(14, 0, {['message'] = 'Sending public key.', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['handshake'] = true, ['requestNew'] = true})
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    elseif second == true then
+                        if message['verify']['label'] == remote.keys['label'] and message['verify']['id'] == remote.keys['id'] then
+                            if message['packet']['encryptionTest'] ~= nil then
+                                if crypt.decrypt(remote.keys['sharedKey'], message['packet']['encryptionTest']) == 'Valid' then
+                                    remote.writeKeys()
+                                    return
+                                else
+                                    second = false
+                                    remote.keys['sharedKey'] = nil
+                                    remote.modem.transmit(14, 0, {['message'] = 'Sending public key.', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['handshake'] = true, ['requestNew'] = true})
+                                end
+                            end
                         end
                     end
                 end
             end
+        elseif event == 'timer' then
+            first, second = nil, nil
+            timer = os.startTimer(60)
         end
-    end 
-    return false
-end
-
-function remote.requestServerKeys()
-    local even, side, channel, replyChannel, message, distance
-    local timerID = os.startTimer(0.05)
-    remote.modem.transmit(21, 0, {['message'] = 'keys', ['verify'] = remote.getComputerInfo()})
-    while true do
-        event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
-        if (event == 'timer') and (side == timerID) then
-            return false
-        elseif event == 'modem_message' then
-            if (channel == 28) then
-                if message['verify'] ~= nil then
-                    if message['packet']['type'] == 'keys' then
-                        if (message['verify']['id'] == message['packet']['data']['id']) and (message['verify']['label'] == message['packet']['data']['label']) then
-                            local file = fs.open('./AE2_Interface/server.keys', 'w')
-                            file.write(textutils.serialize(message['packet']['data']))
-                            file.close()
-                            -- remote.write('Keys retrieved from: '..message['verify']['label'])
-                            -- remote.write('Msg: '..message['message'])
-                            gui.log('Got keys: '..message['packet']['data']['id']..' '..message['packet']['data']['label'], remote.selectDrive())
-                            gui.log('Msg: '..message['message'], remote.selectDrive())
-                            return true
-                        end
-                    end
-                end
-            end
-        end
-        return false
     end
-end --end requestServerKeys
+end --end performHandshake
 
 function remote.initializeNetwork()
     --['ports'] = {['broadcast'] = 7, ['handshake'] = 14, ['requests'] = 21, ['dataTransfer'] = 28}
@@ -198,101 +205,102 @@ function remote.getComputerInfo()
     return {['id'] = os.computerID(), ['label'] = os.computerLabel()}
 end --end getComputerInfo
 
+function remote.readKeys()
+    if fs.exists('/AE2_Interface/keys/server.key') then
+        local file = fs.open('/AE2_Interface/keys/server.key', 'r')
+        remote.keys = textutils.unserialize(file.readAll())
+        file.close()
+    end
+end --end readKeys
+
+function remote.writeKeys()
+    local file = fs.open('/AE2_Interface/keys/server.key', 'w')
+    file.write(textutils.serialize(remote.keys))
+    file.close()
+end --end writeKeys
+
 function remote.eventHandler()
-    --local timerID = os.startTimer(0.5)
-    --remote.getPackets()
-    --gui.main(remote.data, remote.allData)
-    --local event, arg1, arg2, arg3, arg4, arg5
     while true do
-        -- local acknowledged = nil
-        -- gui.updateTime()
         gui.readSettings()
         if #gui.settings['craftingQueue'] > 0 then -- Crafting Queue checking one item at a time
             local item = table.remove(gui.settings['craftingQueue'])
             gui.writeSettings()
             local timestamp = os.clock()
             remote.craftRequests[timestamp] = item
-            -- acknowledged = False
-            remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}})
+            remote.modem.transmit(21, 0, {['message'] = 'Hello', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['packet'] = crypt.encrypt(remote.keys['sharedKey'], textutils.serialize({['type'] = 'craft', ['data'] = item, ['timestamp'] = timestamp}))})
         elseif #remote.craftRequests > 0 then
-            -- acknowledged = False
             for k, v in pairs(remote.craftRequests) do
-                remote.modem.transmit(21, 0, {['message'] = 'craft', ['verify'] = remote.getComputerInfo(), ['packet'] = {['type'] = 'craft', ['data'] = v, ['timestamp'] = k}})
+                remote.modem.transmit(21, 0, {['message'] = 'Hello', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, ['packet'] = crypt.encrypt(remote.keys['sharedKey'], textutils.serialize({['type'] = 'craft', ['data'] = v, ['timestamp'] = k}))})
             end
         end
-        -- local timer = os.startTimer(0.5)
         local event, arg1, arg2, arg3, arg4, arg5 = os.pullEvent()
-        -- if event == 'timer' then
-        --     timer = nil
-            -- coroutine.yield()
         if event == 'mouse_up' or event == 'monitor_touch' then
-            gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
-            -- gui.main(remote.data, remote.allData)--, remote.data['time'], remote.data['items'], remote.data['energy'], remote.allData, remote.data['fluids'], remote.data['cells'], remote.data['cpus'], remote.data['computer'])
+            if remote.data ~= nil then
+                gui.clickedButton(arg1, arg2, arg3, remote.data['craftables'])
+            end
         elseif event == 'mouse_wheel' then
-            gui.mouseWheel(event, arg1, arg2, arg3)
-            -- gui.main(remote.data, remote.allData)
-        elseif event == 'modem_message' then
-            -- remote.checkMessages(event, arg1, arg2, arg3, arg4, arg5)
-            if arg2 == 7 then
-                if arg4['verify'] ~= nil then
-                    local file = fs.open('./AE2_Interface/server.keys', 'r')
-                    local serverKeys = textutils.unserialize(file.readAll())
-                    file.close()
-                    if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
+            if remote.data ~= nil then
+                gui.mouseWheel(event, arg1, arg2, arg3)
+            end
+        elseif event == 'modem_message' then -- event, side, channel, replyChannel, message, distance
+            remote.readKeys()
+            if arg4['verify'] ~= nil then
+                if arg4['verify']['id'] == remote.keys['id'] and arg4['verify']['label'] == remote.keys['label'] then
+                    if arg2 == 7 then
                         if arg4['packet'] ~= nil then
                             if arg4['packet']['type'] == 'newDataAvailable' then
-                                remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
-                                remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
+                                remote.modem.transmit(21, 0, {
+                                    ['message'] = 'Hello', 
+                                    ['verify'] = remote.getComputerInfo(), 
+                                    ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, 
+                                    ['packet'] = crypt.encrypt(remote.keys['sharedKey'], textutils.serialize({['type'] = 'latestSnapshot'}))
+                                })
+                                remote.modem.transmit(21, 0, {
+                                    ['message'] = 'Hello', 
+                                    ['verify'] = remote.getComputerInfo(), 
+                                    ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}, 
+                                    ['packet'] = crypt.encrypt(remote.keys['sharedKey'], textutils.serialize({['type'] = 'allData'}))
+                                })
                             end
                         end
-                    end
-                end
-            elseif arg2 == 28 then
-                if arg4['verify'] ~= nil then
-                    local file = fs.open('./AE2_Interface/server.keys', 'r')
-                    local serverKeys = textutils.unserialize(file.readAll())
-                    file.close()
-                    if arg4['verify']['id'] == serverKeys['id'] and arg4['verify']['label'] == serverKeys['label'] then
-                        if arg4['packet']['type'] == 'craft' then
-                            if arg4['message'] == 'Acknowledged.' then
-                                if remote.craftRequests[arg4['packet']['timestamp']] ~= nil then
-                                    -- acknowledged = True
-                                    gui.log('Sent crafting request for one '..remote.craftRequests[arg4['packet']['timestamp']]['displayName'], remote.selectDrive())
-                                    table.remove(remote.craftRequests, arg4['packet']['timestamp'])
+                    elseif arg2 == 28 then
+                        if arg4['target'] ~= nil and arg4['encryptionTest'] ~= nil then
+                            if arg4['target']['id'] == os.getComputerID() and arg4['target']['label'] == os.getComputerLabel() then
+                                if crypt.decrypt(remote.keys['sharedKey'], arg4['encryptionTest']) == 'Valid' then
+                                    local packet = textutils.unserialize(crypt.decrypt(remote.keys['sharedKey'], arg4['packet']))
+                                    if packet['type'] == 'craft' then
+                                        if arg4['message'] == 'Acknowledged.' then
+                                            if remote.craftRequests[packet['timestamp']] ~= nil then
+                                                gui.log('Sent crafting request for one '..remote.craftRequests[packet['timestamp']]['displayName'], remote.selectDrive())
+                                                table.remove(remote.craftRequests, packet['timestamp'])
+                                            end
+                                        end
+                                    elseif packet['type'] == 'latestSnapshot' then
+                                        if remote.data == nil then
+                                            remote.data = packet['data']
+                                            gui.log('Snapshot Updated!', remote.selectDrive())
+                                        elseif remote.data['time']['clock'] ~= packet['data']['time']['clock'] then
+                                            remote.data = packet['data']
+                                            gui.log('Snapshot Updated!', remote.selectDrive())
+                                        end
+                                    elseif packet['type'] == 'allData' then
+                                        if remote.allData == nil then
+                                            remote.allData = packet['data']
+                                        elseif remote.allData['time']['clock'] ~= packet['data']['time']['clock'] then
+                                            remote.allData = packet['data']
+                                        end
+                                    end
+                                else
+                                    remote.performHandshake()
                                 end
                             end
-                        elseif arg4['packet']['type'] == 'latestSnapshot' then
-                            if remote.data == nil then
-                                remote.data = arg4['packet']['data']
-                                gui.log('Snapshot Updated!', remote.selectDrive())
-                            elseif remote.data['time']['clock'] ~= arg4['packet']['data']['time']['clock'] then
-                                remote.data = arg4['packet']['data']
-                                gui.log('Snapshot Updated!', remote.selectDrive())
-                            end
-                        elseif arg4['packet']['type'] == 'allData' then
-                            if remote.allData == nil then
-                                remote.allData = arg4['packet']['data']
-                            elseif remote.allData['time']['clock'] ~= arg4['packet']['data']['time']['clock'] then
-                                remote.allData = arg4['packet']['data']
-                            end
-                            -- gui.log('Items Updated!', remote.selectDrive())
                         end
                     end
                 end
             end
-        -- else
-            -- timer = nil
-            -- os.queueEvent(event, arg1, arg2, arg3, arg4, arg5) -- Causes multishell issue and periodic freezing of normal timeclock
         end
-        -- if acknowledged ~= nil then
-        --     if not acknowledged then
-        --         gui.readSettings()
-        --         table.insert(gui.settings['craftingQueue'], item)
-        --         gui.writeSettings()
-        --     end
-        -- end
     end
-end --end main
+end --end eventHandler
 
 function remote.guiTime()
     --remote.getPackets()
@@ -304,7 +312,7 @@ function remote.guiTime()
         gui.main(remote.data, remote.allData['data'])
         os.sleep(1/60)
     end
-end
+end --end guiTime
 
 function remote.initialize()
     remote.findDrives()
@@ -337,110 +345,12 @@ function remote.initialize()
     term.scroll(1)
     remote.write('Attempting handshake...')
     textutils.slowWrite('Attempting handshake...')
-    local noHandshake = true
-    while noHandshake do
-        if remote.performHandshake() == true then
-            noHandshake = false
-        end
-    end
-    local noKeys = true
-    while noKeys do 
-        if remote.requestServerKeys() == true then
-            noKeys = false
-        end
-    end
+    remote.performHandshake()
     remote.monitor = remote.checkForMonitor()
     remote.initializeMonitor()
-    remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
-    remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
-    --gui.initialize(term)
-    -- remote.getPackets()
-    -- gui.main(remote.data, remote.allData)
+    remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}})
+    remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo(), ['target'] = {['id'] = remote.keys['id'], ['label'] = remote.keys['label']}})
     parallel.waitForAny(remote.eventHandler, remote.guiTime)--, remote.checkCraftingQueue)--, remote.mainLoop)
-    -- remote.eventHandler()
 end --end initialize
 
 return remote
-
--- Deprecated Below --
-
-
--- function remote.readData()
---     local file = fs.open('./AE2_Interface/data/'..fs.list('./AE2_Interface/data')[1], 'r')
---     local contents = file.readAll()
---     file.close()
---     return textutils.unserialize(contents)
--- end --end readData
-
--- function remote.latestData() -- Retrieves the latest snapshot from the server
---     while true do
---         local timerID = os.startTimer(0.05)
---         local event, side, channel, replyChannel, message, distance
---         while true do
---             remote.modem.transmit(21, 0, {['message'] = 'latestSnapshot', ['verify'] = remote.getComputerInfo()})
---             event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
---             if event == 'modem_message' then
---                 break
---             elseif (event == 'timer') and (side == timerID) then
---                 return remote.latestData()
---             end
---         end
---         if (event == 'modem_message') then
---             if (channel == 28) then
---                 if message['verify'] ~= nil then
---                     local file = fs.open('./AE2_Interface/server.keys', 'r')
---                     local serverKeys = textutils.unserialize(file.readAll())
---                     file.close()
---                     if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
---                         if message['packet']['type'] == 'latestSnapshot' then
---                             return textutils.unserialize(message['packet']['data'])
---                         end
---                     end
---                 end
---             end
---         -- else
---         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
---         end
---         os.sleep(1/60)
---     end
--- end --end retrieveData
-
--- function remote.requestAllData()
---     while true do
---         local timerID = os.startTimer(0.05)
---         local even, side, channel, replyChannel, message, distance
---         while true do
---             remote.modem.transmit(21, 0, {['message'] = 'allData', ['verify'] = remote.getComputerInfo()})
---             event, side, channel, replyChannel, message, distance = os.pullEvent('modem_message')
---             if event == 'modem_message' then
---                 break
---             elseif (event == 'timer') and (side == timerID) then
---                 return remote.requestAllData()
---             end
---         end
---         if (event == 'modem_message') then
---             if (channel == 28) then
---                 local file = fs.open('./AE2_Interface/server.keys', 'r')
---                 local serverKeys = textutils.unserialize(file.readAll())
---                 file.close()
---                 if (message['verify']['id'] == serverKeys['id']) and (message['verify']['label'] == serverKeys['label']) then
---                     if message['packet']['type'] == 'allData' then
---                         return message['packet']['data']
---                     end
---                 end
---             end
---         -- else
---         --     os.queueEvent(event, side, channel, replyChannel, message, distance)
---         end
---         os.sleep(1/60)
---     end
--- end --end requestAllData
-
--- function remote.getPackets() -- Infinite Looping here
---     remote.gettingData = true
---     -- gui.log('Requesting data...', remote.selectDrive())
---     remote.data = remote.latestData()
---     remote.allData = remote.requestAllData()
---     gui.log('Snapshot Updated!', remote.selectDrive())
---     remote.gettingData = false
--- end
