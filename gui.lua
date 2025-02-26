@@ -285,7 +285,7 @@ function gui.clickedButton(button, x, y, craftables)
             gui.monitor.setTextColor(colors.white)
             os.queueEvent('terminate')
             os.sleep(100)
-        elseif y == gui.height-1 then -- Previous/Next Buttons
+        elseif y == gui.height then -- Previous/Next Buttons
             if x>=gui.width-6 and x<=gui.width-2 then --Next
                 gui.nextPage(true)
                 gui.writeSettings()
@@ -428,14 +428,18 @@ end
 function gui.drawButtons()
     gui.monitor.setTextColor(colors.white)
     gui.monitor.setBackgroundColor(colors.lightGray)
-    gui.monitor.setCursorPos(2, gui.height-1)
+    gui.monitor.setCursorPos(2, gui.height)
     gui.monitor.write('<PREV')
-    gui.monitor.setCursorPos(gui.width-5-1, gui.height-1)
+    gui.monitor.setCursorPos(gui.width-5-1, gui.height)
     gui.monitor.write('NEXT>')
     gui.monitor.setCursorPos(1, gui.height)
     gui.monitor.setBackgroundColor(colors.gray)
-    gui.monitor.setCursorPos(gui.width/2-2, gui.height)
-    gui.monitor.write('Page '..gui.settings['currentPage'])
+    gui.monitor.setCursorPos(gui.width/2-3, gui.height)
+    if gui.settings['currentPage'] < 10 then
+        gui.monitor.write('Page 0'..gui.settings['currentPage'])
+    else
+        gui.monitor.write('Page '..gui.settings['currentPage'])
+    end
     gui.monitor.setCursorPos(1, gui.height)
 end --end drawButtons
 
