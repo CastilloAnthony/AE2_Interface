@@ -267,7 +267,9 @@ function remote.eventHandler()
                         if arg4['target'] ~= nil and arg4['encryptionTest'] ~= nil then
                             if arg4['target']['id'] == os.getComputerID() and arg4['target']['label'] == os.getComputerLabel() then
                                 if crypt.decrypt(remote.keys['sharedKey'], arg4['encryptionTest']) == 'Valid' then
-                                    local packet = textutils.unserialize(crypt.decrypt(remote.keys['sharedKey'], arg4['packet']))
+                                    local packet = textutils.unserialize(arg4['packet']))
+                                    if packet['type'] ~= 'allData' then
+                                        packet = textutils.unserialize(crypt.decrypt(remote.keys['sharedKey'], arg4['packet']))
                                     if packet['type'] == 'craft' then
                                         if arg4['message'] == 'Acknowledged.' then
                                             if remote.craftRequests[packet['timestamp']] ~= nil then
